@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { TopBar } from "@/components/layout/TopBar";
+import { MobileHeader } from "@/components/layout/MobileHeader";
+import { BottomNav } from "@/components/layout/BottomNav";
 
 export const metadata: Metadata = {
   title: "Flow GTD",
@@ -19,7 +23,40 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body className="bg-[var(--bg-root)] text-[var(--text-primary)]">
+        {/* Mobile Header - visible below md breakpoint */}
+        <div className="md:hidden">
+          <MobileHeader />
+        </div>
+
+        {/* Desktop Layout - visible at md breakpoint and above */}
+        <div className="hidden md:flex h-screen">
+          {/* Sidebar */}
+          <Sidebar />
+
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col min-w-0">
+            {/* TopBar */}
+            <TopBar />
+
+            {/* Page Content */}
+            <main className="flex-1 overflow-y-auto">
+              {children}
+            </main>
+          </div>
+        </div>
+
+        {/* Mobile Content - visible below md breakpoint */}
+        <div className="md:hidden">
+          {/* Content with padding for fixed header and bottom nav */}
+          <main className="pt-14 pb-14" style={{ paddingBottom: 'calc(56px + env(safe-area-inset-bottom))' }}>
+            {children}
+          </main>
+
+          {/* Bottom Navigation */}
+          <BottomNav />
+        </div>
+      </body>
     </html>
   );
 }
