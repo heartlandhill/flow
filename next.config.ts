@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    // Enable Node.js runtime for middleware to allow Prisma database access
+    middlewareNodeRuntime: true,
+  },
 };
 
 export default nextConfig;
