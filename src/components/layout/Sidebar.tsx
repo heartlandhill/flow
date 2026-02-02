@@ -1,0 +1,112 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import {
+  InboxIcon,
+  TodayIcon,
+  ForecastIcon,
+  ProjectsIcon,
+  TagsIcon,
+  ReviewIcon,
+  PlusIcon,
+} from '@/components/ui/Icons';
+
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  accentVar: string;
+  badge?: number;
+}
+
+const navItems: NavItem[] = [
+  { href: '/inbox', label: 'Inbox', icon: InboxIcon, accentVar: '--view-inbox', badge: 4 },
+  { href: '/today', label: 'Today', icon: TodayIcon, accentVar: '--view-today', badge: 2 },
+  { href: '/forecast', label: 'Forecast', icon: ForecastIcon, accentVar: '--view-forecast' },
+  { href: '/projects', label: 'Projects', icon: ProjectsIcon, accentVar: '--view-projects' },
+  { href: '/tags', label: 'Tags', icon: TagsIcon, accentVar: '--view-tags' },
+  { href: '/review', label: 'Review', icon: ReviewIcon, accentVar: '--view-review', badge: 3 },
+];
+
+export function Sidebar() {
+  const pathname = usePathname();
+  const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
+
+  return (
+    <aside className="w-60 h-screen bg-[var(--bg-sidebar)] border-r border-[var(--border)] flex flex-col">
+      {/* Brand */}
+      <div className="flex items-center gap-2.5 px-4 py-5">
+        <div
+          className="w-7 h-7 rounded-lg"
+          style={{
+            background: 'linear-gradient(135deg, var(--accent) 0%, #C47A5A 100%)',
+          }}
+        />
+        <span className="font-display text-lg font-medium text-[var(--text-primary)]">
+          Flow
+        </span>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 px-2 py-1">
+        <ul className="space-y-0.5">
+          {navItems.map((item) => {
+            const active = isActive(item.href);
+            const Icon = item.icon;
+
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className={`
+                    flex items-center gap-2.5 px-3 py-2 rounded-md text-[13.5px] transition-colors
+                    ${active
+                      ? 'bg-[var(--bg-selected)]'
+                      : 'hover:bg-[var(--bg-hover)]'
+                    }
+                  `}
+                >
+                  <Icon
+                    size={20}
+                    className={
+                      active
+                        ? `text-[var(${item.accentVar})]`
+                        : 'text-[var(--text-secondary)]'
+                    }
+                  />
+                  <span
+                    className={active ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}
+                  >
+                    {item.label}
+                  </span>
+                  {item.badge !== undefined && (
+                    <span
+                      className="ml-auto min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-[var(--accent)] text-[9px] font-medium text-[var(--bg-root)] px-1.5"
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {/* Quick Capture Button */}
+      <div className="px-3 py-4">
+        <button
+          type="button"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-[var(--border)] rounded-md text-[var(--text-secondary)] hover:border-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+        >
+          <PlusIcon size={16} />
+          <span className="text-[13px]">Quick Capture</span>
+          <span className="ml-auto text-[11px] text-[var(--text-tertiary)]">
+            ⌘N
+          </span>
+        </button>
+      </div>
+    </aside>
+  );
+}
