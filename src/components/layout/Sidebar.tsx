@@ -20,6 +20,16 @@ interface NavItem {
   badge?: number;
 }
 
+// Static class mapping to ensure Tailwind JIT generates these classes
+const accentClasses: Record<string, string> = {
+  '--view-inbox': 'text-[var(--view-inbox)]',
+  '--view-today': 'text-[var(--view-today)]',
+  '--view-forecast': 'text-[var(--view-forecast)]',
+  '--view-projects': 'text-[var(--view-projects)]',
+  '--view-tags': 'text-[var(--view-tags)]',
+  '--view-review': 'text-[var(--view-review)]',
+};
+
 const navItems: NavItem[] = [
   { href: '/inbox', label: 'Inbox', icon: InboxIcon, accentVar: '--view-inbox', badge: 4 },
   { href: '/today', label: 'Today', icon: TodayIcon, accentVar: '--view-today', badge: 2 },
@@ -71,7 +81,7 @@ export function Sidebar() {
                     size={20}
                     className={
                       active
-                        ? `text-[var(${item.accentVar})]`
+                        ? accentClasses[item.accentVar]
                         : 'text-[var(--text-secondary)]'
                     }
                   />
