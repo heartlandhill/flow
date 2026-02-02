@@ -113,3 +113,26 @@ export function getDueDateLabel(date: Date | null): {
     };
   }
 }
+
+/**
+ * Get the 3-letter uppercase day name (e.g., "SUN", "MON", "TUE")
+ */
+export function getDayName(date: Date): string {
+  return new Intl.DateTimeFormat("en-US", { weekday: "short" })
+    .format(date)
+    .toUpperCase();
+}
+
+/**
+ * Generate array of dates from today for N days
+ */
+export function getDateRange(days: number): Date[] {
+  const dates: Date[] = [];
+  const today = getToday();
+  for (let i = 0; i < days; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    dates.push(date);
+  }
+  return dates;
+}
