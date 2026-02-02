@@ -217,3 +217,55 @@ This project uses **auto-claude**, an automated build system that executes specs
 ### Spec Naming Convention
 
 Specs are numbered sequentially: `001-spec-003-authentication`, `002-spec-004-responsive-layout-shell`, etc. The first number is the execution order, the second references the spec document number.
+
+### Installation Location
+
+Auto-Claude UI is installed at `/opt/Auto-Claude/`:
+- **UI binary**: `/usr/bin/auto-claude-ui` (symlink to `/opt/Auto-Claude/auto-claude-ui`)
+- **Backend/CLI**: `/opt/Auto-Claude/resources/backend/`
+- **Bundled Python**: `/opt/Auto-Claude/resources/python/bin/python3`
+
+### CLI Usage
+
+To run auto-claude CLI commands, use the bundled Python with proper paths:
+
+```bash
+cd /home/rob/data/Projects/ZOE/flow && \
+PYTHONPATH=/opt/Auto-Claude/resources/backend:/opt/Auto-Claude/resources/python-site-packages \
+/opt/Auto-Claude/resources/python/bin/python3 \
+/opt/Auto-Claude/resources/backend/run.py \
+[OPTIONS]
+```
+
+### Resuming a Failed/Crashed Process
+
+If a spec fails due to API errors or crashes, resume it with:
+
+```bash
+# Resume with auto-continue (non-interactive)
+... run.py --spec NNN --auto-continue
+
+# If blocked by approval check, add --force
+... run.py --spec NNN --auto-continue --force
+```
+
+### Common CLI Commands
+
+```bash
+--list                  # List all specs and their status
+--spec NNN              # Run/resume a specific spec
+--spec NNN --qa-status  # Check QA validation status
+--spec NNN --qa         # Re-run QA validation
+--spec NNN --review     # See what was built
+--spec NNN --merge      # Merge completed build to project
+--spec NNN --create-pr  # Push branch and create GitHub PR
+--spec NNN --discard    # Delete build (with confirmation)
+```
+
+### Debugging Failed Sessions
+
+1. Check `task_logs.json` for the actual error (not just `build-progress.txt`)
+2. Look at the last few entries: `tail -20 .auto-claude/specs/NNN-spec-name/task_logs.json`
+3. Common failures:
+   - **API 500 errors**: Transient, just re-run with `--auto-continue --force`
+   - **QA rejection**: Check `QA_FIX_REQUEST.md` for required fixes
