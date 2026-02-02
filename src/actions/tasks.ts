@@ -57,6 +57,7 @@ export async function completeTask(taskId: string): Promise<ActionResult> {
     revalidatePath("/today");
     revalidatePath("/forecast");
     revalidatePath("/projects");
+    revalidatePath("/tags");
 
     return { success: true };
   } catch (error) {
