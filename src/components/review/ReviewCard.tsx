@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback, useTransition } from "react";
-import type { ReviewableProject, ReviewProjectStats, ActionResult } from "@/types";
+import { TaskRow } from "@/components/tasks/TaskRow";
+import type { ReviewableProject, ReviewProjectStats, ActionResult, TaskWithRelations } from "@/types";
 
 interface ProjectWithStats {
   project: ReviewableProject;
@@ -148,7 +149,7 @@ export function ReviewCard({
       </h2>
 
       {/* Stats row */}
-      <div className="flex gap-6 mb-6">
+      <div className="flex gap-6 mb-4">
         {/* Remaining count */}
         <div className="flex flex-col">
           <span className="text-[20px] md:text-[22px] font-semibold text-[var(--text-primary)]">
@@ -170,7 +171,32 @@ export function ReviewCard({
         </div>
       </div>
 
-      {/* Navigation buttons - placeholder for subtask 3-3 */}
+      {/* Progress bar */}
+      <div className="h-[4px] rounded-full bg-[var(--bg-hover)] mb-6 overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-300 ease-out"
+          style={{
+            width: `${stats.completionPercentage}%`,
+            backgroundColor: areaColor,
+          }}
+        />
+      </div>
+
+      {/* Next Actions section */}
+      <div className="mb-6">
+        <h3 className="text-[12px] font-medium uppercase tracking-[0.8px] text-[var(--text-secondary)] mb-3">
+          Next Actions
+        </h3>
+        <NextActionsList
+          tasks={project.tasks}
+          onTaskComplete={handleTaskComplete}
+        />
+      </div>
+
+      {/* Prompting questions card */}
+      <PromptingQuestionsCard />
+
+      {/* Navigation buttons */}
       <div className="flex gap-3 mt-6 flex-col md:flex-row md:justify-end">
         {/* Previous button - hidden on first project */}
         {!isFirstProject && (
@@ -226,6 +252,85 @@ function CompletionState() {
       <p className="font-display text-lg text-[var(--text-secondary)]">
         All projects reviewed — you&apos;re on top of things.
       </p>
+    </div>
+  );
+}
+
+/**
+ * Next Actions list - shows all incomplete tasks for the project.
+ * Uses TaskRow component for consistent task display.
+ */
+function NextActionsList({
+  tasks,
+  onTaskComplete,
+}: {
+  tasks: ReviewableProject["tasks"];
+  onTaskComplete: (taskId: string) => void;
+}) {
+  // Filter to only incomplete tasks
+  const incompleteTasks = tasks.filter((task) => !task.completed);
+
+  // Convert TaskWithTags to TaskWithRelations for TaskRow
+  // Pass project: null since we're already viewing the project
+  const tasksWithRelations: TaskWithRelations[] = incompleteTasks.map((task) => ({
+    ...task,
+    project: null,
+    reminders: [],
+  }));
+
+  // Edge case: no tasks or all completed
+  if (tasksWithRelations.length === 0) {
+    return (
+      <div className="py-4 text-center">
+        <p className="text-[14px] text-[var(--text-secondary)] italic">
+          No incomplete tasks — all caught up!
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="-mx-2">
+      {tasksWithRelations.map((task) => (
+        <TaskRow
+          key={task.id}
+          task={task}
+          onComplete={onTaskComplete}
+        />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Prompting questions card - GTD reflection questions.
+ * Three questions to help review the project thoroughly.
+ */
+function PromptingQuestionsCard() {
+  const questions = [
+    "Is this project still relevant?",
+    "What's the next physical action?",
+    "Is anything stuck or waiting?",
+  ];
+
+  return (
+    <div
+      className={`
+        bg-[var(--bg-surface)]
+        rounded-lg
+        p-3.5
+      `}
+    >
+      <ul className="space-y-2">
+        {questions.map((question, index) => (
+          <li
+            key={index}
+            className="text-[14px] text-[var(--text-secondary)] italic"
+          >
+            → {question}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
