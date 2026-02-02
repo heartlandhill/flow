@@ -180,3 +180,40 @@ pnpm db:seed      # Seed with sample data
 - Never add dependencies without checking existing ones first.
 - Run `pnpm build` after significant changes to catch type errors.
 - The prototype file (`gtd-flow-responsive.jsx`) is the visual reference. Match it.
+
+## Auto-Claude
+
+This project uses **auto-claude**, an automated build system that executes specs through planning, coding, and QA phases. When asked about auto-claude sessions or logs, look in the `.auto-claude/` directory.
+
+### Directory Structure
+
+```
+.auto-claude/
+├── specs/                          # Per-spec session data
+│   └── {NNN}-{spec-name}/
+│       ├── build-progress.txt      # Human-readable session log
+│       ├── qa_report.md            # QA validation results
+│       ├── QA_FIX_REQUEST.md       # Issues requiring fixes (if any)
+│       ├── implementation_plan.json
+│       ├── task_logs.json          # Detailed execution logs
+│       ├── task_metadata.json
+│       └── memory/
+│           ├── attempt_history.json    # Success/failure per subtask
+│           ├── session_insights/       # Per-session learnings
+│           └── build_commits.json
+├── worktrees/tasks/                # Git worktrees for each spec
+│   └── {NNN}-{spec-name}/          # Isolated working directory
+├── roadmap/                        # Project roadmap and planning
+└── ideation/                       # Feature ideation docs
+```
+
+### Key Files to Check
+
+- **`build-progress.txt`** — Best starting point. Shows session flow, issues found, and fixes applied.
+- **`qa_report.md`** — Final QA verdict with all verification results.
+- **`QA_FIX_REQUEST.md`** — Details of issues caught by QA (if session was rejected).
+- **`memory/attempt_history.json`** — Shows which subtasks succeeded/failed and any stuck tasks.
+
+### Spec Naming Convention
+
+Specs are numbered sequentially: `001-spec-003-authentication`, `002-spec-004-responsive-layout-shell`, etc. The first number is the execution order, the second references the spec document number.
