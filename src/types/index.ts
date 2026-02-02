@@ -61,6 +61,29 @@ export interface TagWithCount extends Tag {
   };
 }
 
+// Project with tasks and counts for Projects view
+export interface ProjectWithTasksAndCounts extends Project {
+  area: Area;
+  tasks: TaskWithTags[];
+  _count: { tasks: number };
+}
+
+// Area with projects for Projects view
+export interface AreaWithProjectsAndCounts extends Area {
+  projects: ProjectWithTasksAndCounts[];
+}
+
+// Someday project (minimal - just needs area for display)
+export interface SomedayProject extends Project {
+  area: Area;
+}
+
+// Completed count result for project progress calculation
+export interface CompletedCountResult {
+  id: string;
+  _count: { tasks: number };
+}
+
 // Server action response type
 export interface ActionResult<T = undefined> {
   success: boolean;
