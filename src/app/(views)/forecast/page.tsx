@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/db";
-import { getToday, getDateRange, formatDate } from "@/lib/utils";
+import { getToday, getDateRange } from "@/lib/utils";
+import { ForecastStrip } from "@/components/forecast/ForecastStrip";
+import { ForecastList } from "@/components/forecast/ForecastList";
 import type { TaskWithRelations } from "@/types";
 
 /**
@@ -100,10 +102,9 @@ export default async function ForecastPage() {
         </p>
       </header>
 
-      {/* Date Strip - placeholder until ForecastStrip component is created */}
+      {/* Date Strip - 14 day calendar view */}
       <section className="px-4 md:px-6 pb-4">
-        {/* ForecastStrip will be rendered here in phase-3 */}
-        {/* Props will be: dates, tasksByDate */}
+        <ForecastStrip dates={dates} tasksByDate={tasksByDateObj} />
       </section>
 
       {/* Task list or empty state */}
@@ -111,62 +112,13 @@ export default async function ForecastPage() {
         {typedTasks.length === 0 ? (
           <EmptyState />
         ) : (
-          <TaskListPlaceholder
+          <ForecastList
+            initialTasks={typedTasks}
+            tasksByDate={tasksByDateObj}
             daysWithTasks={daysWithTasks}
-            tasksByDateObj={tasksByDateObj}
           />
         )}
       </main>
-    </div>
-  );
-}
-
-/**
- * Temporary placeholder for task list until ForecastList is implemented.
- * Displays grouped tasks by day with count.
- */
-function TaskListPlaceholder({
-  daysWithTasks,
-  tasksByDateObj
-}: {
-  daysWithTasks: Date[];
-  tasksByDateObj: Record<string, TaskWithRelations[]>;
-}) {
-  return (
-    <div className="space-y-6">
-      {daysWithTasks.map((date) => {
-        const dateKey = date.toISOString().split("T")[0];
-        const dayTasks = tasksByDateObj[dateKey] || [];
-
-        return (
-          <div key={dateKey}>
-            <div className="flex items-baseline gap-2 px-2 mb-2">
-              <h2 className="font-display text-[16px] font-medium text-[var(--text-primary)]">
-                {formatDate(date)}
-              </h2>
-              <span className="text-[13px] text-[var(--text-tertiary)]">
-                {dayTasks.length}
-              </span>
-            </div>
-            <div className="space-y-1">
-              {dayTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[var(--bg-surface)]"
-                >
-                  <div
-                    className="w-4 h-4 rounded-full border-2"
-                    style={{
-                      borderColor: task.project?.area?.color || "#555"
-                    }}
-                  />
-                  <span className="text-[var(--text-primary)]">{task.title}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })}
     </div>
   );
 }
