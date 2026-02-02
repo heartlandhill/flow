@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getToday, formatDate } from "@/lib/utils";
+import { TodayList } from "./TodayList";
 import type { TaskWithRelations } from "@/types";
 
 /**
@@ -68,12 +69,7 @@ export default async function TodayPage() {
         {typedTasks.length === 0 ? (
           <EmptyState />
         ) : (
-          /* TodayList component will be added in subtask-3-2 */
-          <div className="flex flex-col">
-            <p className="text-[var(--text-secondary)]">
-              {typedTasks.length} task{typedTasks.length !== 1 ? "s" : ""} to complete
-            </p>
-          </div>
+          <TodayList initialTasks={typedTasks} />
         )}
       </main>
     </div>
