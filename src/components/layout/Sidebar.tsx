@@ -11,6 +11,7 @@ import {
   ReviewIcon,
   PlusIcon,
 } from '@/components/ui/Icons';
+import { useQuickCapture } from '@/hooks/useQuickCapture';
 
 interface NavItem {
   href: string;
@@ -41,6 +42,7 @@ const navItems: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { open } = useQuickCapture();
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
 
   return (
@@ -108,6 +110,7 @@ export function Sidebar() {
       <div className="px-3 py-4">
         <button
           type="button"
+          onClick={open}
           className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-[var(--border)] rounded-md text-[var(--text-secondary)] hover:border-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
         >
           <PlusIcon size={16} />
