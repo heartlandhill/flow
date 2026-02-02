@@ -61,6 +61,15 @@ export interface TagWithCount extends Tag {
   };
 }
 
+// Tag with tasks for Tags view (view model)
+export interface TagWithTasks {
+  id: string;
+  name: string;
+  icon: string | null;
+  taskCount: number;
+  tasks: TaskWithRelations[];
+}
+
 // Project with tasks and counts for Projects view
 export interface ProjectWithTasksAndCounts extends Project {
   area: Area;
