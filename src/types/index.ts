@@ -84,6 +84,20 @@ export interface CompletedCountResult {
   _count: { tasks: number };
 }
 
+// Project with full relations for Review view
+export interface ReviewableProject extends Project {
+  area: Area;
+  tasks: TaskWithTags[];
+}
+
+// Computed stats for a project in Review
+export interface ReviewProjectStats {
+  totalTasks: number;
+  completedTasks: number;
+  incompleteTasks: number;
+  completionPercentage: number;
+}
+
 // Server action response type
 export interface ActionResult<T = undefined> {
   success: boolean;
