@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+:root {
+  /* Core Palette */
+  --bg-root: #1a1a1e;
+  --bg-sidebar: #141416;
+  --bg-surface: #222226;
+  --bg-hover: #2a2a2f;
+  --bg-selected: #2d2d35;
+  --bg-card: #26262b;
+  --border: #333338;
+  --text-primary: #e8e4df;
+  --text-secondary: #8a877f;
+  --text-tertiary: #5e5c57;
+  --accent: #E8A87C;
+
+  /* Area Colors */
+  --area-work: #E8A87C;
+  --area-personal: #85B7D5;
+  --area-health: #9ED4A0;
+
+  /* View Accent Colors */
+  --view-inbox: #E8A87C;
+  --view-today: #F2D06B;
+  --view-forecast: #85B7D5;
+  --view-projects: #C4A7E7;
+  --view-tags: #9ED4A0;
+  --view-review: #E88B8B;
+
+  /* Due Date Colors */
+  --due-overdue: #E88B8B;
+  --due-overdue-bg: rgba(232, 139, 139, 0.14);
+  --due-today: #F2D06B;
+  --due-today-bg: rgba(242, 208, 107, 0.12);
+  --due-tomorrow: #E8A87C;
+  --due-tomorrow-bg: rgba(232, 168, 124, 0.12);
+}
+
+body {
+  background: var(--bg-root);
+  color: var(--text-primary);
+  font-family: "DM Sans", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Font Classes */
+.font-display {
+  font-family: "Newsreader", serif;
+}
