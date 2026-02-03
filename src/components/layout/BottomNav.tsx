@@ -57,10 +57,10 @@ export function BottomNav({ badgeCounts }: BottomNavProps) {
           const badgeCount = item.badgeKey ? badgeCounts[item.badgeKey] : 0;
 
           return (
-            <li key={item.href} className="flex-1">
+            <li key={item.href} className="flex-1 h-full">
               <Link
                 href={item.href}
-                className="flex flex-col items-center justify-center gap-0.5 py-1.5 transition-colors"
+                className="flex flex-col items-center justify-center gap-0.5 py-1.5 min-h-[44px] h-full transition-colors"
               >
                 <div className="relative">
                   <Icon
