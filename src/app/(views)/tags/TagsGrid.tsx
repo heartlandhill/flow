@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useCallback, useTransition, useMemo } from "react";
+import { useState, useCallback, useTransition, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { TaskRow } from "@/components/tasks/TaskRow";
+import { TagManagementModal } from "@/components/tags/TagManagementModal";
 import { completeTask } from "@/actions/tasks";
 import { useSearch } from "@/context/SearchContext";
-import type { TagWithTasks, TaskWithRelations } from "@/types";
+import type { TagWithTasks, TagWithCount, TaskWithRelations } from "@/types";
 
 interface TagsGridProps {
   initialTags: TagWithTasks[];
+  /** All tags with task counts for the management modal */
+  allTags: TagWithCount[];
 }
 
 /**
@@ -15,15 +19,25 @@ interface TagsGridProps {
  * Displays a grid of tag cards with single-selection behavior.
  * When a tag is selected, shows a filtered list of incomplete tasks.
  */
-export function TagsGrid({ initialTags }: TagsGridProps) {
+export function TagsGrid({ initialTags, allTags }: TagsGridProps) {
+  // Router for refreshing data after modal changes
+  const router = useRouter();
   // Local state for tags (for optimistic task count updates)
   const [tags, setTags] = useState<TagWithTasks[]>(initialTags);
+
+  // Sync local state when initialTags prop changes (after router.refresh())
+  useEffect(() => {
+    setTags(initialTags);
+  }, [initialTags]);
+
   // Currently selected tag ID (null = no selection)
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
   // Track tasks being completed (prevent double-clicks)
   const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
   // React transition for non-blocking server action calls
   const [, startTransition] = useTransition();
+  // Modal state for TagManagementModal
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Get the currently selected tag
   const selectedTag = useMemo(
@@ -129,8 +143,58 @@ export function TagsGrid({ initialTags }: TagsGridProps) {
     // For now, this is a placeholder for the click handler
   }, []);
 
+  // Modal handlers
+  const handleOpenModal = useCallback(() => {
+    setIsModalOpen(true);
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false);
+  }, []);
+
+  // Refresh data after modal changes (create, update, delete)
+  const handleModalUpdated = useCallback(() => {
+    router.refresh();
+  }, [router]);
+
   return (
     <div className="flex flex-col gap-6">
+      {/* Action header with Manage Tags button */}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={handleOpenModal}
+          className={`
+            flex items-center gap-1.5
+            px-3 py-1.5
+            text-[14px] font-medium
+            text-[var(--accent)]
+            bg-transparent
+            rounded-md
+            transition-all duration-150
+            hover:bg-[rgba(232,168,124,0.12)]
+            active:scale-[0.98]
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2
+          `}
+        >
+          {/* Settings/gear icon */}
+          <svg
+            width={16}
+            height={16}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+          <span>Manage Tags</span>
+        </button>
+      </div>
+
       {/* Tag Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-[10px] md:gap-3">
         {tags.map((tag) => (
@@ -181,6 +245,14 @@ export function TagsGrid({ initialTags }: TagsGridProps) {
           )}
         </div>
       )}
+
+      {/* Tag Management Modal */}
+      <TagManagementModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        tags={allTags}
+        onUpdated={handleModalUpdated}
+      />
     </div>
   );
 }

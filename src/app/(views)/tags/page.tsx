@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { TagsGrid } from "./TagsGrid";
-import type { TagWithTasks, TaskWithRelations } from "@/types";
+import type { TagWithTasks, TagWithCount, TaskWithRelations } from "@/types";
 
 /**
  * Tags page - displays a grid of tag cards for context-based task filtering.
@@ -29,13 +29,24 @@ export default async function TagsPage() {
     },
   });
 
-  // Transform to TagWithTasks view model
+  // Transform to TagWithTasks view model for grid display
   const tagsWithTasks: TagWithTasks[] = tags.map((tag) => ({
     id: tag.id,
     name: tag.name,
     icon: tag.icon,
     taskCount: tag.tasks.length,
     tasks: tag.tasks.map((tt) => tt.task as TaskWithRelations),
+  }));
+
+  // Transform to TagWithCount for the management modal (lighter weight, just needs counts)
+  const tagsForModal: TagWithCount[] = tags.map((tag) => ({
+    id: tag.id,
+    name: tag.name,
+    icon: tag.icon,
+    sort_order: tag.sort_order,
+    created_at: tag.created_at,
+    updated_at: tag.updated_at,
+    _count: { tasks: tag.tasks.length },
   }));
 
   return (
@@ -57,7 +68,7 @@ export default async function TagsPage() {
         {tagsWithTasks.length === 0 ? (
           <EmptyState />
         ) : (
-          <TagsGrid initialTags={tagsWithTasks} />
+          <TagsGrid initialTags={tagsWithTasks} allTags={tagsForModal} />
         )}
       </main>
     </div>

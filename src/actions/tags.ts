@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import type { ActionResult, Tag } from "@/types";
+import type { ActionResult, Tag, TagWithCount } from "@/types";
 
 /**
  * Server action to create a new tag.
@@ -32,6 +32,87 @@ export async function createTag(data: {
   } catch (error) {
     console.error("Create tag error:", error);
     return { success: false, error: "Failed to create tag" };
+  }
+}
+
+/**
+ * Server action to update an existing tag.
+ * Updates the tag name and/or icon.
+ */
+export async function updateTag(
+  tagId: string,
+  data: {
+    name?: string;
+    icon?: string | null;
+  }
+): Promise<ActionResult<Tag>> {
+  try {
+    // Validate tag ID
+    if (!tagId || typeof tagId !== "string") {
+      return { success: false, error: "Tag ID is required" };
+    }
+
+    // Validate that at least one field is being updated
+    if (data.name === undefined && data.icon === undefined) {
+      return { success: false, error: "No update data provided" };
+    }
+
+    // Validate name if provided
+    if (data.name !== undefined) {
+      if (typeof data.name !== "string" || data.name.trim().length === 0) {
+        return { success: false, error: "Tag name cannot be empty" };
+      }
+    }
+
+    // Build update data object
+    const updateData: { name?: string; icon?: string | null } = {};
+    if (data.name !== undefined) {
+      updateData.name = data.name.trim();
+    }
+    if (data.icon !== undefined) {
+      updateData.icon = data.icon;
+    }
+
+    const tag = await prisma.tag.update({
+      where: { id: tagId },
+      data: updateData,
+    });
+
+    // Revalidate tags view to show updated tag
+    revalidatePath("/tags");
+
+    return { success: true, data: tag };
+  } catch (error) {
+    console.error("Update tag error:", error);
+    return { success: false, error: "Failed to update tag" };
+  }
+}
+
+/**
+ * Server action to delete a tag.
+ * The cascade delete in the schema will automatically remove all task_tag associations.
+ */
+export async function deleteTag(tagId: string): Promise<ActionResult> {
+  try {
+    // Validate tag ID
+    if (!tagId || typeof tagId !== "string") {
+      return { success: false, error: "Tag ID is required" };
+    }
+
+    await prisma.tag.delete({
+      where: { id: tagId },
+    });
+
+    // Revalidate all views that show tags or tasks with tags
+    revalidatePath("/tags");
+    revalidatePath("/inbox");
+    revalidatePath("/today");
+    revalidatePath("/projects");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Delete tag error:", error);
+    return { success: false, error: "Failed to delete tag" };
   }
 }
 
@@ -79,4 +160,26 @@ export async function setTaskTags(
     console.error("Set task tags error:", error);
     return { success: false, error: "Failed to set task tags" };
   }
+}
+
+/**
+ * Query function to get all tags with their incomplete task counts.
+ * Used by the tag management modal to display task counts next to each tag.
+ * Returns tags ordered by sort_order with _count of incomplete tasks.
+ */
+export async function getTagsWithTaskCounts(): Promise<TagWithCount[]> {
+  const tags = await prisma.tag.findMany({
+    orderBy: { sort_order: "asc" },
+    include: {
+      _count: {
+        select: {
+          tasks: {
+            where: { task: { completed: false } },
+          },
+        },
+      },
+    },
+  });
+
+  return tags;
 }
