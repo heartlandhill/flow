@@ -21,7 +21,7 @@ export function TodayList({ initialTasks }: TodayListProps) {
   // Track tasks being completed (for preventing double-clicks)
   const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
   // React transition for non-blocking server action calls
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   // Search context for filtering
   const { query } = useSearch();
 
@@ -88,7 +88,7 @@ export function TodayList({ initialTasks }: TodayListProps) {
     [tasks, completingIds]
   );
 
-  const handleSelect = useCallback((taskId: string) => {
+  const handleSelect = useCallback((_taskId: string) => {
     // Task selection will be handled by TaskDetail component in a future spec
     // For now, this is a placeholder for the click handler
   }, []);

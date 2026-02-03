@@ -103,7 +103,7 @@ export function ProjectsList({
   );
 
   // Placeholder for task selection (future implementation)
-  const handleTaskSelect = useCallback((taskId: string) => {
+  const handleTaskSelect = useCallback((_taskId: string) => {
     // Task selection will be handled by TaskDetail component in a future spec
   }, []);
 

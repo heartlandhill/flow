@@ -23,7 +23,7 @@ export function ProjectDetailList({ initialTasks, projectType }: ProjectDetailLi
   // Track tasks being completed (for preventing double-clicks)
   const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
   // React transition for non-blocking server action calls
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   // Search context for filtering
   const { query } = useSearch();
 

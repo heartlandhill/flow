@@ -94,8 +94,9 @@ export function ForecastList({
           );
           if (updatedDate.length === 0) {
             // Remove the date key entirely if no tasks remain
-            const { [taskDateKey]: _, ...rest } = prev;
-            return rest;
+            return Object.fromEntries(
+              Object.entries(prev).filter(([key]) => key !== taskDateKey)
+            );
           }
           return { ...prev, [taskDateKey]: updatedDate };
         });
@@ -162,7 +163,7 @@ export function ForecastList({
     [tasks, completingIds]
   );
 
-  const handleSelect = useCallback((taskId: string) => {
+  const handleSelect = useCallback((_taskId: string) => {
     // Task selection will be handled by TaskDetail component in a future spec
     // For now, this is a placeholder for the click handler
   }, []);

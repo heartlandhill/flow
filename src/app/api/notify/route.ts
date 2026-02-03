@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import {
   sendWebPushNotification,
-  formatNotificationBody,
   type NotificationPayload,
 } from "@/lib/notifications/web-push";
 import { sendNtfyNotification } from "@/lib/notifications/ntfy";
