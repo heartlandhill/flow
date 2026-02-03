@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { ChevronIcon } from "@/components/ui/Icons";
 import { updateProject, deleteProject } from "@/actions/projects";
+import { useOverlay } from "@/context/OverlayContext";
 import type { ProjectStatus, ProjectType } from "@/types";
 
 /**
@@ -65,6 +66,8 @@ export function EditProjectModal({
   onUpdated,
   onDeleted,
 }: EditProjectModalProps) {
+  const { registerOverlay, unregisterOverlay } = useOverlay();
+
   // Form state - pre-filled with current project values
   const [name, setName] = useState(project.name);
   const [areaId, setAreaId] = useState(project.area_id);
@@ -90,6 +93,14 @@ export function EditProjectModal({
   const intervalDropdownRef = useRef<HTMLDivElement>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Register overlay when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      registerOverlay('edit-project-modal');
+      return () => unregisterOverlay('edit-project-modal');
+    }
+  }, [isOpen, registerOverlay, unregisterOverlay]);
 
   // Reset form state when project changes or modal opens
   useEffect(() => {

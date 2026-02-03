@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useQuickCapture } from "@/hooks/useQuickCapture";
+import { useOverlay } from "@/context/OverlayContext";
 import { createTask, createTaskInProject } from "@/actions/tasks";
 import { InboxIcon } from "@/components/ui/Icons";
 
@@ -14,10 +15,19 @@ import { InboxIcon } from "@/components/ui/Icons";
  */
 export function QuickCapture() {
   const { isOpen, close, projectId, projectName, areaColor } = useQuickCapture();
+  const { registerOverlay, unregisterOverlay } = useOverlay();
   const [title, setTitle] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Register overlay when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      registerOverlay('quick-capture');
+      return () => unregisterOverlay('quick-capture');
+    }
+  }, [isOpen, registerOverlay, unregisterOverlay]);
 
   // Autofocus input when modal opens
   useEffect(() => {

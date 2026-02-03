@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { ChevronIcon } from "@/components/ui/Icons";
 import { createProject } from "@/actions/projects";
 import { deleteTask } from "@/actions/tasks";
+import { useOverlay } from "@/context/OverlayContext";
 
 /**
  * Area type for the modal props (minimal - just what we need for display)
@@ -49,6 +50,8 @@ export function NewProjectModal({
   taskIdToConvert,
   headerTitle,
 }: NewProjectModalProps) {
+  const { registerOverlay, unregisterOverlay } = useOverlay();
+
   // Form state - initialize with defaultName if provided
   const [name, setName] = useState(defaultName);
   const [areaId, setAreaId] = useState("");
@@ -60,6 +63,14 @@ export function NewProjectModal({
   const areaDropdownRef = useRef<HTMLDivElement>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Register overlay when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      registerOverlay('new-project-modal');
+      return () => unregisterOverlay('new-project-modal');
+    }
+  }, [isOpen, registerOverlay, unregisterOverlay]);
 
   // Pre-select first area, set default name, and autofocus input when modal opens
   useEffect(() => {
