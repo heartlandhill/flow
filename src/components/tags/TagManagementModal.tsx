@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useOverlay } from "@/context/OverlayContext";
 import type { TagWithCount } from "@/types";
 
@@ -156,33 +156,8 @@ export function TagManagementModal({
             </div>
           ) : (
             <div className="space-y-1">
-              {/* Tag list placeholder - will be implemented in subtask-2-2 */}
               {tags.map((tag) => (
-                <div
-                  key={tag.id}
-                  className={`
-                    flex items-center gap-3 px-3 py-2.5
-                    bg-[var(--bg-surface)]
-                    border border-[var(--border)]
-                    rounded-lg
-                  `}
-                >
-                  <span className="text-[16px] w-6 text-center">
-                    {tag.icon || "#"}
-                  </span>
-                  <span className="flex-1 text-[14px] text-[var(--text-primary)]">
-                    {tag.name}
-                  </span>
-                  <span
-                    className={`
-                      text-[12px] text-[var(--text-tertiary)]
-                      bg-[var(--bg-root)]
-                      px-2 py-0.5 rounded-full
-                    `}
-                  >
-                    {tag._count.tasks}
-                  </span>
-                </div>
+                <TagListItem key={tag.id} tag={tag} />
               ))}
             </div>
           )}
@@ -208,6 +183,67 @@ export function TagManagementModal({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Props for the TagListItem component
+ */
+interface TagListItemProps {
+  tag: TagWithCount;
+}
+
+/**
+ * Individual tag row component for the management modal.
+ * Displays icon, name, and task count in a consistent list format.
+ * Follows the TagCard pattern from TagsGrid.tsx for styling consistency.
+ */
+function TagListItem({ tag }: TagListItemProps) {
+  // Format task count with proper pluralization for screen readers
+  const taskCountLabel = useMemo(() => {
+    const count = tag._count.tasks;
+    return count === 1 ? "1 task" : `${count} tasks`;
+  }, [tag._count.tasks]);
+
+  return (
+    <div
+      className={`
+        flex items-center gap-3 px-3 py-2.5
+        bg-[var(--bg-surface)]
+        border border-[var(--border)]
+        rounded-lg
+        transition-colors duration-150
+        hover:bg-[var(--bg-hover)]
+      `}
+    >
+      {/* Tag icon */}
+      <span
+        className="text-[18px] w-6 text-center flex-shrink-0"
+        role="img"
+        aria-hidden="true"
+      >
+        {tag.icon || "#"}
+      </span>
+
+      {/* Tag name */}
+      <span className="flex-1 text-[14px] text-[var(--text-primary)] truncate min-w-0">
+        {tag.name}
+      </span>
+
+      {/* Task count pill */}
+      <span
+        className={`
+          text-[11px] font-medium
+          text-[var(--text-tertiary)]
+          bg-[var(--bg-root)]
+          px-1.5 py-0.5 rounded-full
+          flex-shrink-0
+        `}
+        aria-label={taskCountLabel}
+      >
+        {tag._count.tasks}
+      </span>
     </div>
   );
 }
