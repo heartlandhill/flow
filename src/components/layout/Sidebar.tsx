@@ -132,7 +132,7 @@ export function Sidebar({ badgeCounts }: SidebarProps) {
           <PlusIcon size={16} />
           <span className="text-[13px]">Quick Capture</span>
           <span className="ml-auto text-[11px] text-[var(--text-tertiary)]">
-            ⌘N
+            ⌃⌘N
           </span>
         </button>
       </div>
