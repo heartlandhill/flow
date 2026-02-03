@@ -23,6 +23,15 @@ interface CreateAreaInput {
 }
 
 /**
+ * Input data for updating an existing area.
+ */
+interface UpdateAreaInput {
+  name?: string;
+  color?: string;
+  sortOrder?: number;
+}
+
+/**
  * Server action to get all areas with their project counts.
  * Returns areas sorted by sort_order ascending, then by name.
  * Used by the AreaManagementModal to display areas with project counts.
@@ -86,5 +95,69 @@ export async function createArea(
     }
 
     return { success: false, error: "Failed to create area" };
+  }
+}
+
+/**
+ * Server action to update an existing area.
+ * Only provided fields will be updated.
+ */
+export async function updateArea(
+  areaId: string,
+  input: UpdateAreaInput
+): Promise<ActionResult<Area>> {
+  try {
+    // Validate area ID
+    if (!areaId || typeof areaId !== "string") {
+      return { success: false, error: "Area ID is required" };
+    }
+
+    // Verify area exists
+    const existingArea = await prisma.area.findUnique({
+      where: { id: areaId },
+    });
+
+    if (!existingArea) {
+      return { success: false, error: "Area not found" };
+    }
+
+    // Build update data, only including provided fields
+    const updateData: Record<string, unknown> = {};
+
+    if (input.name !== undefined) {
+      if (typeof input.name !== "string" || input.name.trim().length === 0) {
+        return { success: false, error: "Area name cannot be empty" };
+      }
+      updateData.name = input.name.trim();
+    }
+
+    if (input.color !== undefined) {
+      updateData.color = input.color?.trim() || "#888888";
+    }
+
+    if (input.sortOrder !== undefined) {
+      updateData.sort_order = input.sortOrder;
+    }
+
+    const area = await prisma.area.update({
+      where: { id: areaId },
+      data: updateData,
+    });
+
+    // Revalidate projects view to show updated area
+    revalidatePath("/projects");
+
+    return { success: true, data: area };
+  } catch (error) {
+    console.error("Update area error:", error);
+
+    // Handle unique constraint violation
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        return { success: false, error: "An area with this name already exists" };
+      }
+    }
+
+    return { success: false, error: "Failed to update area" };
   }
 }
