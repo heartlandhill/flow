@@ -88,7 +88,7 @@ export default async function ForecastPage() {
       {/* Header */}
       <header className="flex flex-col px-4 pt-6 pb-4 md:px-6 md:pt-8 md:pb-5">
         <div className="flex items-baseline gap-3">
-          <h1 className="font-display text-[26px] md:text-[28px] font-normal text-[var(--text-primary)]">
+          <h1 className="font-display text-[26px] md:text-[28px] font-medium text-[var(--text-primary)]">
             Forecast
           </h1>
           {typedTasks.length > 0 && (
