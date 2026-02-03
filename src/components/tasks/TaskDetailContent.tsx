@@ -512,6 +512,87 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
             </div>
           )
         )}
+
+        {/* Action buttons - only shown in edit mode */}
+        {isEditing && (
+          <>
+            {/* Mobile layout: stacked full-width, Save on top */}
+            <div className="flex flex-col gap-2 md:hidden mt-4">
+              <button
+                type="button"
+                disabled={!editedTitle.trim()}
+                className={`
+                  w-full py-2.5
+                  text-[14px] font-medium
+                  text-[#1a1a1e]
+                  bg-[var(--accent)]
+                  rounded-md
+                  transition-all duration-150
+                  hover:opacity-90
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                `}
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelClick}
+                className={`
+                  w-full py-2.5
+                  text-[14px] font-medium
+                  text-[var(--text-secondary)]
+                  bg-[var(--bg-surface)]
+                  border border-[var(--border)]
+                  rounded-md
+                  transition-all duration-150
+                  hover:opacity-80
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
+                `}
+              >
+                Cancel
+              </button>
+            </div>
+
+            {/* Desktop layout: side by side, right-aligned */}
+            <div className="hidden md:flex gap-3 justify-end mt-4">
+              <button
+                type="button"
+                onClick={handleCancelClick}
+                className={`
+                  px-4 py-2
+                  text-[14px] font-medium
+                  text-[var(--text-secondary)]
+                  bg-[var(--bg-surface)]
+                  border border-[var(--border)]
+                  rounded-md
+                  transition-all duration-150
+                  hover:opacity-80
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
+                `}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!editedTitle.trim()}
+                className={`
+                  px-4 py-2
+                  text-[14px] font-medium
+                  text-[#1a1a1e]
+                  bg-[var(--accent)]
+                  rounded-md
+                  transition-all duration-150
+                  hover:opacity-90
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                `}
+              >
+                Save
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
