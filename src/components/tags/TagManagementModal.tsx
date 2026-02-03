@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useOverlay } from "@/context/OverlayContext";
+import { updateTag } from "@/actions/tags";
 import type { TagWithCount } from "@/types";
 
 /**
@@ -157,7 +158,7 @@ export function TagManagementModal({
           ) : (
             <div className="space-y-1">
               {tags.map((tag) => (
-                <TagListItem key={tag.id} tag={tag} />
+                <TagListItem key={tag.id} tag={tag} onUpdated={onUpdated} />
               ))}
             </div>
           )}
@@ -192,22 +193,243 @@ export function TagManagementModal({
  */
 interface TagListItemProps {
   tag: TagWithCount;
+  onUpdated?: () => void;
 }
 
 /**
  * Individual tag row component for the management modal.
  * Displays icon, name, and task count in a consistent list format.
+ * Supports inline editing of name and icon with click-to-edit.
  * Follows the TagCard pattern from TagsGrid.tsx for styling consistency.
  */
-function TagListItem({ tag }: TagListItemProps) {
+function TagListItem({ tag, onUpdated }: TagListItemProps) {
+  // Edit mode state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState(tag.name);
+  const [editedIcon, setEditedIcon] = useState(tag.icon || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Refs for input focus management
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
   // Format task count with proper pluralization for screen readers
   const taskCountLabel = useMemo(() => {
     const count = tag._count.tasks;
     return count === 1 ? "1 task" : `${count} tasks`;
   }, [tag._count.tasks]);
 
+  // Reset form state when tag prop changes
+  useEffect(() => {
+    setEditedName(tag.name);
+    setEditedIcon(tag.icon || "");
+  }, [tag.name, tag.icon]);
+
+  // Focus name input when entering edit mode
+  useEffect(() => {
+    if (isEditing) {
+      // Small delay to ensure render is complete
+      const timer = setTimeout(() => {
+        nameInputRef.current?.focus();
+        nameInputRef.current?.select();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isEditing]);
+
+  // Enter edit mode
+  const handleStartEdit = useCallback(() => {
+    setIsEditing(true);
+    setError(null);
+  }, []);
+
+  // Cancel editing and reset to original values
+  const handleCancelEdit = useCallback(() => {
+    setIsEditing(false);
+    setEditedName(tag.name);
+    setEditedIcon(tag.icon || "");
+    setError(null);
+  }, [tag.name, tag.icon]);
+
+  // Save changes
+  const handleSave = useCallback(async () => {
+    const trimmedName = editedName.trim();
+    const trimmedIcon = editedIcon.trim();
+
+    // Don't save if name is empty
+    if (!trimmedName) {
+      setError("Tag name is required");
+      return;
+    }
+
+    // Don't save if nothing changed
+    if (trimmedName === tag.name && (trimmedIcon || null) === tag.icon) {
+      setIsEditing(false);
+      return;
+    }
+
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const result = await updateTag(tag.id, {
+        name: trimmedName,
+        icon: trimmedIcon || null,
+      });
+
+      if (result.success) {
+        setIsEditing(false);
+        onUpdated?.();
+      } else {
+        setError(result.error || "Failed to update tag");
+      }
+    } catch {
+      setError("Failed to update tag");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [editedName, editedIcon, tag.id, tag.name, tag.icon, isSubmitting, onUpdated]);
+
+  // Handle key events in inputs
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSave();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        handleCancelEdit();
+      }
+    },
+    [handleSave, handleCancelEdit]
+  );
+
+  // Edit mode UI
+  if (isEditing) {
+    return (
+      <div
+        className={`
+          flex flex-col gap-2 px-3 py-2.5
+          bg-[var(--bg-surface)]
+          border border-[var(--accent)]
+          rounded-lg
+          transition-colors duration-150
+        `}
+      >
+        <div className="flex items-center gap-2">
+          {/* Icon input */}
+          <input
+            type="text"
+            value={editedIcon}
+            onChange={(e) => setEditedIcon(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={isSubmitting}
+            placeholder="#"
+            maxLength={2}
+            className={`
+              w-10 h-9
+              text-[18px] text-center
+              text-[var(--text-primary)]
+              placeholder:text-[var(--text-tertiary)]
+              bg-[var(--bg-root)]
+              border border-[var(--border)]
+              rounded-md
+              focus:outline-none focus:border-[var(--accent)]
+              transition-colors duration-150
+              disabled:opacity-60
+            `}
+            aria-label="Tag icon"
+          />
+
+          {/* Name input */}
+          <input
+            ref={nameInputRef}
+            type="text"
+            value={editedName}
+            onChange={(e) => setEditedName(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={isSubmitting}
+            placeholder="Tag name"
+            className={`
+              flex-1 h-9
+              px-2
+              text-[14px]
+              text-[var(--text-primary)]
+              placeholder:text-[var(--text-tertiary)]
+              bg-[var(--bg-root)]
+              border border-[var(--border)]
+              rounded-md
+              focus:outline-none focus:border-[var(--accent)]
+              transition-colors duration-150
+              disabled:opacity-60
+            `}
+            aria-label="Tag name"
+          />
+
+          {/* Save button */}
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!editedName.trim() || isSubmitting}
+            className={`
+              px-2.5 h-9
+              text-[12px] font-medium
+              text-[var(--bg-root)]
+              bg-[var(--accent)]
+              rounded-md
+              transition-all duration-150
+              hover:opacity-90
+              focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]
+              disabled:opacity-50 disabled:cursor-not-allowed
+            `}
+          >
+            {isSubmitting ? "..." : "Save"}
+          </button>
+
+          {/* Cancel button */}
+          <button
+            type="button"
+            onClick={handleCancelEdit}
+            disabled={isSubmitting}
+            className={`
+              px-2.5 h-9
+              text-[12px] font-medium
+              text-[var(--text-secondary)]
+              bg-[var(--bg-root)]
+              border border-[var(--border)]
+              rounded-md
+              transition-all duration-150
+              hover:bg-[var(--bg-hover)]
+              focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border)]
+              disabled:opacity-50 disabled:cursor-not-allowed
+            `}
+          >
+            Cancel
+          </button>
+        </div>
+
+        {/* Error message */}
+        {error && (
+          <p className="text-[12px] text-[#E88B8B] px-1">{error}</p>
+        )}
+      </div>
+    );
+  }
+
+  // Normal display mode
   return (
     <div
+      onClick={handleStartEdit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleStartEdit();
+        }
+      }}
+      role="button"
+      tabIndex={0}
       className={`
         flex items-center gap-3 px-3 py-2.5
         bg-[var(--bg-surface)]
@@ -215,7 +437,10 @@ function TagListItem({ tag }: TagListItemProps) {
         rounded-lg
         transition-colors duration-150
         hover:bg-[var(--bg-hover)]
+        cursor-pointer
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]
       `}
+      aria-label={`Edit tag: ${tag.name}`}
     >
       {/* Tag icon */}
       <span
