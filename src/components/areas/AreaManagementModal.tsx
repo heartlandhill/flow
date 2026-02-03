@@ -467,7 +467,7 @@ export function AreaManagementModal({
                       `}
                       style={{
                         backgroundColor: color,
-                        ringColor: newAreaColor === color ? color : undefined,
+                        ...(newAreaColor === color && { '--tw-ring-color': color } as React.CSSProperties),
                       }}
                       aria-label={`Select color ${color}`}
                     />
@@ -583,7 +583,7 @@ export function AreaManagementModal({
                               `}
                               style={{
                                 backgroundColor: color,
-                                ringColor: editColor === color ? color : undefined,
+                                ...(editColor === color && { '--tw-ring-color': color } as React.CSSProperties),
                               }}
                               aria-label={`Select color ${color}`}
                             />
