@@ -4,9 +4,24 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { ForecastIcon } from "@/components/ui/Icons";
 import type { TaskWithRelations } from "@/types";
 
+// Simplified type for project dropdown - just need id, name, and area info
+interface ProjectForDropdown {
+  id: string;
+  name: string;
+}
+
+interface AreaWithProjects {
+  id: string;
+  name: string;
+  color: string;
+  projects: ProjectForDropdown[];
+}
+
 interface TaskDetailContentProps {
   task: TaskWithRelations;
   onEditClick?: () => void;
+  /** Areas with their projects for the project dropdown */
+  areasWithProjects?: AreaWithProjects[];
 }
 
 /**
@@ -132,12 +147,13 @@ function getAreaColor(areaColor: string | null | undefined): string {
  * TaskDetailContent renders task fields in display or edit mode.
  * Shared between mobile bottom sheet and desktop side panel.
  */
-export function TaskDetailContent({ task, onEditClick }: TaskDetailContentProps) {
+export function TaskDetailContent({ task, onEditClick, areasWithProjects = [] }: TaskDetailContentProps) {
   const [isEditing, setIsEditing] = useState(false);
 
   // Form state for edit mode - pre-filled with current values
   const [editedTitle, setEditedTitle] = useState(task.title);
   const [editedNotes, setEditedNotes] = useState(task.notes || "");
+  const [editedProjectId, setEditedProjectId] = useState<string | null>(task.project_id);
 
   // Ref for notes textarea auto-grow
   const notesTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -173,6 +189,7 @@ export function TaskDetailContent({ task, onEditClick }: TaskDetailContentProps)
     // Pre-fill form state with current values
     setEditedTitle(task.title);
     setEditedNotes(task.notes || "");
+    setEditedProjectId(task.project_id);
     setIsEditing(true);
     onEditClick?.();
   };
@@ -182,6 +199,7 @@ export function TaskDetailContent({ task, onEditClick }: TaskDetailContentProps)
     // Reset form state to original values
     setEditedTitle(task.title);
     setEditedNotes(task.notes || "");
+    setEditedProjectId(task.project_id);
     setIsEditing(false);
   };
 
@@ -239,7 +257,32 @@ export function TaskDetailContent({ task, onEditClick }: TaskDetailContentProps)
           <span className="text-[12px] font-medium text-[var(--text-tertiary)] uppercase tracking-wide">
             Project
           </span>
-          {task.project ? (
+          {isEditing ? (
+            // Edit mode: show dropdown with projects grouped by area
+            <select
+              value={editedProjectId || ""}
+              onChange={(e) => setEditedProjectId(e.target.value || null)}
+              className="w-full px-3 py-2 rounded-[6px] bg-[var(--bg-surface)] border border-[var(--border)] text-[14px] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+            >
+              <option value="">No project</option>
+              {areasWithProjects.length > 0 ? (
+                areasWithProjects.map((area) => (
+                  <optgroup key={area.id} label={area.name}>
+                    {area.projects.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))
+              ) : (
+                <option value="" disabled>
+                  No projects available
+                </option>
+              )}
+            </select>
+          ) : task.project ? (
+            // Display mode with project
             <span
               className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[13px] font-medium w-fit"
               style={{
@@ -254,6 +297,7 @@ export function TaskDetailContent({ task, onEditClick }: TaskDetailContentProps)
               {task.project.name}
             </span>
           ) : (
+            // Display mode without project
             <span className="text-[14px] text-[var(--text-tertiary)]">
               No project
             </span>
