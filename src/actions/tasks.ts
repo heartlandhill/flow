@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { cancelReminder } from "@/lib/notifications/scheduler";
-import type { ActionResult, Task } from "@/types";
+import type { ActionResult, Task, TaskWithRelations } from "@/types";
 
 /**
  * Server action to create a new task in the inbox.
@@ -109,7 +109,7 @@ export async function completeTask(taskId: string): Promise<ActionResult> {
 export async function updateTask(
   taskId: string,
   data: import("@/types").UpdateTaskInput
-): Promise<ActionResult<Task>> {
+): Promise<ActionResult<TaskWithRelations>> {
   try {
     // Validate task ID
     if (!taskId || typeof taskId !== "string") {
@@ -168,13 +168,11 @@ export async function updateTask(
     }
 
     // Handle task update and tags in a transaction if tagIds provided
-    let updatedTask: Task;
-
     if (data.tagIds !== undefined) {
       // Use transaction to update task and tags atomically
-      updatedTask = await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx) => {
         // Update the task
-        const task = await tx.task.update({
+        await tx.task.update({
           where: { id: taskId },
           data: updateData,
         });
@@ -192,15 +190,35 @@ export async function updateTask(
             })),
           });
         }
-
-        return task;
       });
     } else {
       // No tag changes, just update the task
-      updatedTask = await prisma.task.update({
+      await prisma.task.update({
         where: { id: taskId },
         data: updateData,
       });
+    }
+
+    // Fetch the updated task with full relations
+    const taskWithRelations = await prisma.task.findUnique({
+      where: { id: taskId },
+      include: {
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+        project: {
+          include: {
+            area: true,
+          },
+        },
+        reminders: true,
+      },
+    });
+
+    if (!taskWithRelations) {
+      return { success: false, error: "Task not found after update" };
     }
 
     // Revalidate all views that show tasks
@@ -212,7 +230,7 @@ export async function updateTask(
     // Revalidate layout to update navigation badge counts
     revalidatePath("/", "layout");
 
-    return { success: true, data: updatedTask };
+    return { success: true, data: taskWithRelations as TaskWithRelations };
   } catch (error) {
     console.error("Update task error:", error);
     return { success: false, error: "Failed to update task" };
