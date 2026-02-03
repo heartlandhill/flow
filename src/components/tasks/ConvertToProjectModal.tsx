@@ -47,7 +47,7 @@ export function ConvertToProjectModal({
 }: ConvertToProjectModalProps) {
   // Form state (no name input - uses taskTitle)
   const [areaId, setAreaId] = useState("");
-  const [projectType, setProjectType] = useState<"PARALLEL" | "SEQUENTIAL">("PARALLEL");
+  const [projectType, setProjectType] = useState<"PARALLEL" | "SEQUENTIAL">("SEQUENTIAL");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,7 +73,7 @@ export function ConvertToProjectModal({
       // Delay clearing form fields to allow close animation
       const timer = setTimeout(() => {
         setAreaId("");
-        setProjectType("PARALLEL");
+        setProjectType("SEQUENTIAL");
         setError(null);
       }, 200);
       return () => clearTimeout(timer);

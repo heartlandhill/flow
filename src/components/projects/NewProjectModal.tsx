@@ -41,7 +41,7 @@ export function NewProjectModal({
   // Form state
   const [name, setName] = useState("");
   const [areaId, setAreaId] = useState("");
-  const [projectType, setProjectType] = useState<"PARALLEL" | "SEQUENTIAL">("PARALLEL");
+  const [projectType, setProjectType] = useState<"PARALLEL" | "SEQUENTIAL">("SEQUENTIAL");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,7 +76,7 @@ export function NewProjectModal({
       const timer = setTimeout(() => {
         setName("");
         setAreaId("");
-        setProjectType("PARALLEL");
+        setProjectType("SEQUENTIAL");
         setError(null);
       }, 200);
       return () => clearTimeout(timer);
