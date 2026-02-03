@@ -10,6 +10,7 @@ const SESSION_TOKEN_REGEX = /^[a-f0-9]{64}$/;
 const PUBLIC_PATHS = [
   "/login",
   "/api/snooze",
+  "/api/notify",
   "/api/auth/validate",
 ];
 

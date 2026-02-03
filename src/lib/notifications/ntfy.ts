@@ -126,7 +126,7 @@ export async function sendNtfyNotification(
     `http, 10 min, ${snoozeBaseUrl}?id=${payload.reminder_id}&mins=10&token=${token}, clear=true`,
     `http, 1 hour, ${snoozeBaseUrl}?id=${payload.reminder_id}&mins=60&token=${token}, clear=true`,
     `http, Tomorrow, ${snoozeBaseUrl}?id=${payload.reminder_id}&mins=1440&token=${token}, clear=true`,
-    `http, Done, ${snoozeBaseUrl}?id=${payload.reminder_id}&done=true&token=${token}, clear=true`,
+    `http, Done ✓, ${snoozeBaseUrl}?id=${payload.reminder_id}&done=true&token=${token}, clear=true`,
   ];
 
   const response = await fetch(`${ntfyBaseUrl}/${topic}`, {
