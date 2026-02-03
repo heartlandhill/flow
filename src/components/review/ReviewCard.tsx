@@ -60,18 +60,19 @@ export function ReviewCard({
 }: ReviewCardProps) {
   // Current index in the project list
   const [currentIndex, setCurrentIndex] = useState(0);
-  // Track if review session is complete
-  const [isComplete, setIsComplete] = useState(false);
   // React transition for non-blocking server action calls
   const [isPending, startTransition] = useTransition();
 
-  // Current project and stats
-  const current = projectsWithStats[currentIndex];
+  // Clamp currentIndex to valid range (in case list shrinks after revalidation)
   const totalProjects = projectsWithStats.length;
+  const safeIndex = Math.min(currentIndex, Math.max(0, totalProjects - 1));
+
+  // Current project and stats
+  const current = totalProjects > 0 ? projectsWithStats[safeIndex] : null;
 
   // Determine if on first or last project
-  const isFirstProject = currentIndex === 0;
-  const isLastProject = currentIndex === totalProjects - 1;
+  const isFirstProject = safeIndex === 0;
+  const isLastProject = safeIndex === totalProjects - 1;
 
   // Handle "Previous" button click
   const handlePrevious = useCallback(() => {
@@ -92,15 +93,16 @@ export function ReviewCard({
         return;
       }
 
-      // If this was the last project, show completion state
-      if (isLastProject) {
-        setIsComplete(true);
-      } else {
-        // Advance to next project
-        setCurrentIndex((prev) => prev + 1);
-      }
+      // Note: We don't increment currentIndex here because:
+      // 1. markProjectReviewed updates next_review_date to the future
+      // 2. revalidatePath("/review") re-fetches the project list
+      // 3. The reviewed project is removed from the list (no longer due)
+      // 4. The next project naturally slides into the current index position
+      //
+      // If this was the last project, the list will be empty after revalidation,
+      // which is handled by the empty state check below.
     });
-  }, [isPending, current, onMarkReviewed, isLastProject]);
+  }, [isPending, current, onMarkReviewed]);
 
   // Handle task completion
   const handleTaskComplete = useCallback(
@@ -116,13 +118,9 @@ export function ReviewCard({
   );
 
   // Show completion state when all projects are reviewed
-  if (isComplete) {
-    return <CompletionState />;
-  }
-
-  // Should not happen, but guard for empty array
+  // The list becomes empty after revalidation when the last project is marked reviewed
   if (!current) {
-    return null;
+    return <CompletionState />;
   }
 
   const { project, stats } = current;
