@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { ReviewCard } from "@/components/review/ReviewCard";
 import { markProjectReviewed } from "@/actions/projects";
-import { completeTask } from "@/actions/tasks";
+import { completeTask, reorderTasks } from "@/actions/tasks";
 import type { ReviewableProject, ReviewProjectStats } from "@/types";
 
 /**
@@ -88,6 +88,7 @@ export default async function ReviewPage() {
             projectsWithStats={projectsWithStats}
             onMarkReviewed={markProjectReviewed}
             onTaskComplete={completeTask}
+            onReorderTasks={reorderTasks}
           />
         )}
       </main>

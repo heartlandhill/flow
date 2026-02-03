@@ -1,31 +1,67 @@
 "use client";
 
-import { useState, useCallback, useTransition, useMemo } from "react";
-import { TaskRow } from "@/components/tasks/TaskRow";
-import { completeTask } from "@/actions/tasks";
+import { useState, useCallback, useTransition, useMemo, useRef } from "react";
+import {
+  DndContext,
+  closestCenter,
+  useSensor,
+  useSensors,
+  MouseSensor,
+  TouchSensor,
+  KeyboardSensor,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  arrayMove,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
+import { SortableTaskRow } from "@/components/tasks/SortableTaskRow";
+import { completeTask, reorderTasks } from "@/actions/tasks";
 import { useSearch } from "@/context/SearchContext";
-import { getFirstIncompleteTaskId } from "@/lib/task-utils";
-import type { TaskWithRelations, ProjectType } from "@/types";
+import type { TaskWithRelations } from "@/types";
 
 interface ProjectDetailListProps {
   initialTasks: TaskWithRelations[];
-  projectType: ProjectType;
+  projectId: string;
 }
 
 /**
  * Client component for the project detail task list.
- * Manages optimistic UI updates for task completion and search filtering.
+ * Manages optimistic UI updates for task completion, search filtering,
+ * and drag-and-drop reordering.
  * Follows the same pattern as InboxList and TodayList.
  */
-export function ProjectDetailList({ initialTasks, projectType }: ProjectDetailListProps) {
+export function ProjectDetailList({
+  initialTasks,
+  projectId,
+}: ProjectDetailListProps) {
   // Local state for optimistic updates
   const [tasks, setTasks] = useState<TaskWithRelations[]>(initialTasks);
   // Track tasks being completed (for preventing double-clicks)
   const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
   // React transition for non-blocking server action calls
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
   // Search context for filtering
   const { query } = useSearch();
+  // Store previous order for rollback on reorder failure
+  const previousOrderRef = useRef<TaskWithRelations[]>([]);
+
+  // Configure dnd-kit sensors
+  // MouseSensor for desktop, TouchSensor with delay for mobile, KeyboardSensor for accessibility
+  const sensors = useSensors(
+    useSensor(MouseSensor),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 150,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Filter tasks based on search query
   const filteredTasks = useMemo(() => {
@@ -36,25 +72,6 @@ export function ProjectDetailList({ initialTasks, projectType }: ProjectDetailLi
   }, [tasks, query]);
 
   const isSearchActive = query.trim().length > 0;
-
-  // Determine first available task for SEQUENTIAL projects
-  const firstIncompleteId = useMemo(() => {
-    if (projectType !== "SEQUENTIAL") return null;
-    return getFirstIncompleteTaskId(tasks);
-  }, [tasks, projectType]);
-
-  // Check if a task is available (actionable now)
-  const isTaskAvailable = useCallback(
-    (task: TaskWithRelations): boolean => {
-      // Completed tasks are not available
-      if (task.completed) return false;
-      // PARALLEL projects: all incomplete tasks are available
-      if (projectType === "PARALLEL") return true;
-      // SEQUENTIAL projects: only first incomplete task is available
-      return task.id === firstIncompleteId;
-    },
-    [projectType, firstIncompleteId]
-  );
 
   const handleComplete = useCallback(
     (taskId: string) => {
@@ -102,6 +119,48 @@ export function ProjectDetailList({ initialTasks, projectType }: ProjectDetailLi
     [tasks, completingIds]
   );
 
+  // Handle drag end event for reordering
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+
+      // No drop target or dropped in same position
+      if (!over || active.id === over.id) {
+        return;
+      }
+
+      // Find old and new indices
+      const oldIndex = tasks.findIndex((t) => t.id === active.id);
+      const newIndex = tasks.findIndex((t) => t.id === over.id);
+
+      if (oldIndex === -1 || newIndex === -1) {
+        return;
+      }
+
+      // Store previous order for rollback
+      previousOrderRef.current = tasks;
+
+      // Optimistically update the order
+      const newTasks = arrayMove(tasks, oldIndex, newIndex);
+      setTasks(newTasks);
+
+      // Call server action to persist the new order
+      startTransition(async () => {
+        const result = await reorderTasks(
+          projectId,
+          newTasks.map((t) => t.id)
+        );
+
+        if (!result.success) {
+          // Rollback on failure
+          console.error("Failed to reorder tasks:", result.error);
+          setTasks(previousOrderRef.current);
+        }
+      });
+    },
+    [tasks, projectId]
+  );
+
   // If no tasks at all (not due to search), return null
   if (tasks.length === 0) {
     return null;
@@ -119,34 +178,33 @@ export function ProjectDetailList({ initialTasks, projectType }: ProjectDetailLi
   }
 
   return (
-    <div className="flex flex-col">
-      {isSearchActive && (
-        <div className="px-4 py-2 text-sm text-[var(--text-secondary)]">
-          Showing results for &apos;{query}&apos;
-        </div>
-      )}
-      {filteredTasks.map((task) => {
-        const available = isTaskAvailable(task);
-        return (
-          <div
-            key={task.id}
-            className={`relative ${!available ? "opacity-50" : ""}`}
-          >
-            <TaskRow
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext
+        items={filteredTasks.map((t) => t.id)}
+        strategy={verticalListSortingStrategy}
+      >
+        <div className="flex flex-col">
+          {isSearchActive && (
+            <div className="px-4 py-2 text-sm text-[var(--text-secondary)]">
+              Showing results for &apos;{query}&apos;
+            </div>
+          )}
+          {filteredTasks.map((task) => (
+            <SortableTaskRow
+              key={task.id}
               // Hide project pill since we're already viewing this project
               task={{ ...task, project: null }}
               // Pass full task data to context for TaskDetailPanel
               contextTask={task}
               onComplete={handleComplete}
             />
-            {!available && (
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-tertiary)] italic">
-                (waiting)
-              </span>
-            )}
-          </div>
-        );
-      })}
-    </div>
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
   );
 }

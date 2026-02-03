@@ -336,3 +336,46 @@ export async function deleteTask(taskId: string): Promise<ActionResult> {
     return { success: false, error: "Failed to delete task" };
   }
 }
+
+/**
+ * Server action to reorder tasks within a project.
+ * Updates sort_order for each task atomically in a transaction.
+ * The order of taskIds array determines the new sort_order values.
+ */
+export async function reorderTasks(
+  projectId: string,
+  taskIds: string[]
+): Promise<ActionResult> {
+  try {
+    // Validate inputs
+    if (!projectId || typeof projectId !== "string") {
+      return { success: false, error: "Project ID is required" };
+    }
+    if (!Array.isArray(taskIds) || taskIds.length === 0) {
+      return { success: false, error: "Task IDs array is required" };
+    }
+
+    // Update sort_order for each task in transaction
+    await prisma.$transaction(
+      taskIds.map((taskId, index) =>
+        prisma.task.update({
+          where: { id: taskId },
+          data: { sort_order: index },
+        })
+      )
+    );
+
+    // Revalidate project detail page
+    revalidatePath(`/projects/${projectId}`);
+    // Revalidate projects list (counts may change display)
+    revalidatePath("/projects");
+    // Revalidate today and forecast views
+    revalidatePath("/today");
+    revalidatePath("/forecast");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Reorder tasks error:", error);
+    return { success: false, error: "Failed to reorder tasks" };
+  }
+}

@@ -1,6 +1,21 @@
 "use client";
 
-import { useState, useCallback, useTransition } from "react";
+import { useState, useCallback, useTransition, useEffect } from "react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { SortableTaskRow } from "@/components/tasks/SortableTaskRow";
 import { TaskRow } from "@/components/tasks/TaskRow";
 import { getFirstIncompleteTaskId } from "@/lib/task-utils";
 import type { ReviewableProject, ReviewProjectStats, ActionResult, TaskWithRelations } from "@/types";
@@ -17,6 +32,8 @@ interface ReviewCardProps {
   onMarkReviewed: (id: string) => Promise<ActionResult>;
   /** Server action to complete a task */
   onTaskComplete: (taskId: string) => Promise<ActionResult>;
+  /** Server action to reorder tasks within a project */
+  onReorderTasks: (projectId: string, taskIds: string[]) => Promise<ActionResult>;
 }
 
 /**
@@ -39,6 +56,7 @@ export function ReviewCard({
   projectsWithStats,
   onMarkReviewed,
   onTaskComplete,
+  onReorderTasks,
 }: ReviewCardProps) {
   // Current index in the project list
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -187,6 +205,7 @@ export function ReviewCard({
           tasks={project.tasks}
           project={project}
           onTaskComplete={handleTaskComplete}
+          onReorderTasks={onReorderTasks}
         />
       </div>
 
@@ -258,7 +277,7 @@ function CompletionState() {
 }
 
 /**
- * Next Actions list - shows ALL incomplete tasks for review.
+ * Next Actions list - shows ALL incomplete tasks for review with drag-and-drop reordering.
  *
  * Unlike action-oriented views (Today, Forecast), Review shows all tasks
  * so users can examine the whole project, reorder if needed, and identify
@@ -269,42 +288,96 @@ function NextActionsList({
   tasks,
   project,
   onTaskComplete,
+  onReorderTasks,
 }: {
   tasks: ReviewableProject["tasks"];
   project: ReviewableProject;
   onTaskComplete: (taskId: string) => void;
+  onReorderTasks: (projectId: string, taskIds: string[]) => Promise<ActionResult>;
 }) {
-  // Filter to only incomplete tasks (sorted by sort_order)
-  const incompleteTasks = [...tasks]
-    .filter((task) => !task.completed)
-    .sort((a, b) => a.sort_order - b.sort_order);
+  // Track if component is mounted (for SSR hydration fix)
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Local state for optimistic reordering
+  const [localTasks, setLocalTasks] = useState(() =>
+    [...tasks]
+      .filter((task) => !task.completed)
+      .sort((a, b) => a.sort_order - b.sort_order)
+  );
+  const [isPending, startTransition] = useTransition();
+
+  // Sensors for drag-and-drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px movement required to start drag
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Handle drag end - reorder tasks
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+
+      if (over && active.id !== over.id) {
+        const oldIndex = localTasks.findIndex((t) => t.id === active.id);
+        const newIndex = localTasks.findIndex((t) => t.id === over.id);
+
+        if (oldIndex !== -1 && newIndex !== -1) {
+          // Optimistic update
+          const newTasks = [...localTasks];
+          const [movedTask] = newTasks.splice(oldIndex, 1);
+          newTasks.splice(newIndex, 0, movedTask);
+          setLocalTasks(newTasks);
+
+          // Persist to server
+          startTransition(async () => {
+            const taskIds = newTasks.map((t) => t.id);
+            const result = await onReorderTasks(project.id, taskIds);
+            if (!result.success) {
+              console.error("Failed to reorder tasks:", result.error);
+              // Revert on failure
+              setLocalTasks(
+                [...tasks]
+                  .filter((task) => !task.completed)
+                  .sort((a, b) => a.sort_order - b.sort_order)
+              );
+            }
+          });
+        }
+      }
+    },
+    [localTasks, onReorderTasks, project.id, tasks]
+  );
 
   // For SEQUENTIAL projects, identify the first task (the "available" one)
   const firstIncompleteId = project.type === "SEQUENTIAL"
-    ? getFirstIncompleteTaskId(incompleteTasks)
+    ? getFirstIncompleteTaskId(localTasks)
     : null;
 
   // Convert tasks for display
-  // For SEQUENTIAL projects, mark whether each task is available or waiting
   const tasksForDisplay: Array<{
     displayTask: TaskWithRelations;
     contextTask: TaskWithRelations;
     isAvailable: boolean;
-  }> = incompleteTasks.map((task) => ({
-    // Display task has project: null to hide redundant project pill
+  }> = localTasks.map((task) => ({
     displayTask: {
       ...task,
       project: null,
       reminders: [],
     },
-    // Context task includes project info for TaskDetailPanel
     contextTask: {
       ...task,
       project: { ...project, area: project.area },
       reminders: [],
     },
-    // For PARALLEL projects, all tasks are available
-    // For SEQUENTIAL projects, only the first incomplete task is available
     isAvailable: project.type === "PARALLEL" || task.id === firstIncompleteId,
   }));
 
@@ -319,26 +392,64 @@ function NextActionsList({
     );
   }
 
+  // SSR fallback - render without drag-and-drop to avoid hydration mismatch
+  // (dnd-kit generates different IDs on server vs client)
+  if (!isMounted) {
+    return (
+      <div className="-mx-2">
+        {tasksForDisplay.map(({ displayTask, contextTask, isAvailable }) => (
+          <div
+            key={displayTask.id}
+            className={`relative ${!isAvailable ? "opacity-50" : ""}`}
+          >
+            <TaskRow
+              task={displayTask}
+              contextTask={contextTask}
+              onComplete={onTaskComplete}
+            />
+            {!isAvailable && (
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[var(--text-tertiary)]">
+                (waiting)
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Client-side with drag-and-drop enabled
   return (
-    <div className="-mx-2">
-      {tasksForDisplay.map(({ displayTask, contextTask, isAvailable }) => (
-        <div
-          key={displayTask.id}
-          className={`relative ${!isAvailable ? "opacity-50" : ""}`}
-        >
-          <TaskRow
-            task={displayTask}
-            contextTask={contextTask}
-            onComplete={onTaskComplete}
-          />
-          {!isAvailable && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[var(--text-tertiary)]">
-              (waiting)
-            </span>
-          )}
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext
+        items={localTasks.map((t) => t.id)}
+        strategy={verticalListSortingStrategy}
+      >
+        <div className={`-mx-2 pl-6 ${isPending ? "opacity-70" : ""}`}>
+          {tasksForDisplay.map(({ displayTask, contextTask, isAvailable }) => (
+            <div
+              key={displayTask.id}
+              className={`relative ${!isAvailable ? "opacity-50" : ""}`}
+            >
+              <SortableTaskRow
+                task={displayTask}
+                contextTask={contextTask}
+                onComplete={onTaskComplete}
+              />
+              {!isAvailable && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[var(--text-tertiary)]">
+                  (waiting)
+                </span>
+              )}
+            </div>
+          ))}
         </div>
-      ))}
-    </div>
+      </SortableContext>
+    </DndContext>
   );
 }
 

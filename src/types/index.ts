@@ -132,5 +132,12 @@ export interface ClarifyInput {
   tagIds: string[];
 }
 
+// Input type for reorderTasks server action
+// Used for drag-and-drop task reordering within a project
+export interface ReorderTasksInput {
+  projectId: string;
+  taskIds: string[];
+}
+
 // Re-export notification types
 export type { NotificationPayload } from "@/lib/notifications/web-push";
