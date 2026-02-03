@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback, useTransition } from "react";
+import { useState, useCallback, useTransition, useMemo } from "react";
 import { TaskRow } from "@/components/tasks/TaskRow";
 import { completeTask } from "@/actions/tasks";
+import { useSearch } from "@/context/SearchContext";
 import { formatDate } from "@/lib/utils";
 import type { TaskWithRelations } from "@/types";
 
@@ -39,6 +40,34 @@ export function ForecastList({
   const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
   // React transition for non-blocking server action calls
   const [, startTransition] = useTransition();
+  // Search context for filtering
+  const { query } = useSearch();
+
+  // Filter tasks within each date group based on search query
+  const filteredTasksByDate = useMemo(() => {
+    if (!query.trim()) return tasksByDate;
+    const lowerQuery = query.toLowerCase();
+    const filtered: Record<string, TaskWithRelations[]> = {};
+    for (const [dateKey, dateTasks] of Object.entries(tasksByDate)) {
+      const matchingTasks = dateTasks.filter((t) =>
+        t.title.toLowerCase().includes(lowerQuery)
+      );
+      if (matchingTasks.length > 0) {
+        filtered[dateKey] = matchingTasks;
+      }
+    }
+    return filtered;
+  }, [tasksByDate, query]);
+
+  const isSearchActive = query.trim().length > 0;
+
+  // Count total filtered tasks across all dates
+  const totalFilteredTasks = useMemo(() => {
+    return Object.values(filteredTasksByDate).reduce(
+      (sum, dateTasks) => sum + dateTasks.length,
+      0
+    );
+  }, [filteredTasksByDate]);
 
   const handleComplete = useCallback(
     (taskId: string) => {
@@ -138,21 +167,38 @@ export function ForecastList({
     // For now, this is a placeholder for the click handler
   }, []);
 
-  // Get current days that have tasks (derived from tasksByDate state)
+  // Get current days that have tasks (derived from filtered tasksByDate state)
   const currentDaysWithTasks = initialDaysWithTasks.filter((date) => {
     const dateKey = getDateKey(date);
-    return (tasksByDate[dateKey]?.length ?? 0) > 0;
+    return (filteredTasksByDate[dateKey]?.length ?? 0) > 0;
   });
 
+  // If no tasks at all (not due to search), return null
   if (tasks.length === 0) {
     return null;
   }
 
+  // If search is active but no results
+  if (isSearchActive && totalFilteredTasks === 0) {
+    return (
+      <div className="flex flex-col">
+        <div className="px-4 py-2 text-sm text-[var(--text-secondary)]">
+          No tasks matching &apos;{query}&apos;
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {isSearchActive && (
+        <div className="px-4 py-2 text-sm text-[var(--text-secondary)]">
+          Showing results for &apos;{query}&apos;
+        </div>
+      )}
       {currentDaysWithTasks.map((date) => {
         const dateKey = getDateKey(date);
-        const dayTasks = tasksByDate[dateKey] || [];
+        const dayTasks = filteredTasksByDate[dateKey] || [];
 
         if (dayTasks.length === 0) {
           return null;
