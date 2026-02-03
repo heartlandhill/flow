@@ -189,6 +189,9 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
   // Ref for notes textarea auto-grow
   const notesTextareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Ref for title input to set cursor position
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
   const dueDateInfo = getDueDateInfo(task.due_date);
   const deferDateInfo = getDeferDateInfo(task.defer_date);
   const areaColor = getAreaColor(task.project?.area?.color);
@@ -214,6 +217,18 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
       adjustTextareaHeight();
     }
   }, [isEditing, editedNotes, adjustTextareaHeight]);
+
+  // Focus title input and set cursor to beginning when entering edit mode
+  useEffect(() => {
+    if (isEditing && titleInputRef.current) {
+      const input = titleInputRef.current;
+      input.focus();
+      // Set cursor position to beginning so text is visible from the start
+      input.setSelectionRange(0, 0);
+      // Scroll input to show beginning of text
+      input.scrollLeft = 0;
+    }
+  }, [isEditing]);
 
   // Handle entering edit mode
   const handleEditClick = () => {
@@ -359,12 +374,12 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
         {isEditing ? (
           // Edit mode: show editable title input
           <input
+            ref={titleInputRef}
             type="text"
             value={editedTitle}
             onChange={(e) => setEditedTitle(e.target.value)}
             className="flex-1 px-3 py-2 rounded-[6px] bg-[var(--bg-surface)] border border-[var(--border)] text-[16px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
             placeholder="Task title"
-            autoFocus
           />
         ) : (
           // Display mode: show title text
