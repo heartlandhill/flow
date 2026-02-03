@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
+import { cancelReminder } from "@/lib/notifications/scheduler";
 import type { ActionResult, Task } from "@/types";
 
 /**
@@ -36,6 +37,7 @@ export async function createTask(title: string): Promise<ActionResult<Task>> {
 /**
  * Server action to mark a task as completed.
  * Sets completed = true and completed_at = now().
+ * Also cancels all pending/snoozed reminders for the task.
  */
 export async function completeTask(taskId: string): Promise<ActionResult> {
   try {
@@ -51,6 +53,35 @@ export async function completeTask(taskId: string): Promise<ActionResult> {
         completed_at: new Date(),
       },
     });
+
+    // Find all PENDING/SNOOZED reminders for this task
+    const reminders = await prisma.reminder.findMany({
+      where: {
+        task_id: taskId,
+        status: { in: ["PENDING", "SNOOZED"] },
+      },
+    });
+
+    // Cancel pg-boss jobs and update reminders to DISMISSED
+    for (const reminder of reminders) {
+      if (reminder.pgboss_job_id) {
+        await cancelReminder(reminder.pgboss_job_id);
+      }
+    }
+
+    // Update all found reminders to DISMISSED status
+    if (reminders.length > 0) {
+      await prisma.reminder.updateMany({
+        where: {
+          task_id: taskId,
+          status: { in: ["PENDING", "SNOOZED"] },
+        },
+        data: {
+          status: "DISMISSED",
+          pgboss_job_id: null,
+        },
+      });
+    }
 
     // Revalidate all views that show tasks
     revalidatePath("/inbox");
