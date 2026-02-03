@@ -238,3 +238,42 @@ export async function clarifyTask(
     return { success: false, error: "Failed to clarify task" };
   }
 }
+
+/**
+ * Server action to delete a task.
+ * TaskTag and Reminder records are automatically deleted via Prisma cascade.
+ */
+export async function deleteTask(taskId: string): Promise<ActionResult> {
+  try {
+    // Validate input
+    if (!taskId || typeof taskId !== "string") {
+      return { success: false, error: "Task ID is required" };
+    }
+
+    // Check if task exists before deleting
+    const existingTask = await prisma.task.findUnique({
+      where: { id: taskId },
+    });
+
+    if (!existingTask) {
+      return { success: false, error: "Task not found" };
+    }
+
+    // Delete task - TaskTag and Reminder cascade automatically
+    await prisma.task.delete({
+      where: { id: taskId },
+    });
+
+    // Revalidate all views that show tasks
+    revalidatePath("/inbox");
+    revalidatePath("/today");
+    revalidatePath("/forecast");
+    revalidatePath("/projects");
+    revalidatePath("/tags");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Delete task error:", error);
+    return { success: false, error: "Failed to delete task" };
+  }
+}
