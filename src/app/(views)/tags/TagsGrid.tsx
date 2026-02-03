@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useTransition, useMemo } from "react";
+import { useState, useCallback, useTransition, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { TaskRow } from "@/components/tasks/TaskRow";
 import { TagManagementModal } from "@/components/tags/TagManagementModal";
@@ -24,6 +24,12 @@ export function TagsGrid({ initialTags, allTags }: TagsGridProps) {
   const router = useRouter();
   // Local state for tags (for optimistic task count updates)
   const [tags, setTags] = useState<TagWithTasks[]>(initialTags);
+
+  // Sync local state when initialTags prop changes (after router.refresh())
+  useEffect(() => {
+    setTags(initialTags);
+  }, [initialTags]);
+
   // Currently selected tag ID (null = no selection)
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
   // Track tasks being completed (prevent double-clicks)
