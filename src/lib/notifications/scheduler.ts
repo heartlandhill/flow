@@ -1,4 +1,4 @@
-import PgBoss from "pg-boss";
+import { PgBoss, type Job } from "pg-boss";
 import { prisma } from "@/lib/db";
 
 // Queue name for reminder jobs
@@ -35,10 +35,6 @@ export async function getBoss(): Promise<PgBoss> {
   const boss = new PgBoss({
     connectionString,
     schema: "pgboss",
-    // Retain completed jobs for 24 hours for debugging
-    archiveCompletedAfterSeconds: 86400,
-    // Retry failed jobs up to 3 times
-    retryLimit: 3,
   });
 
   // Handle pg-boss errors
@@ -56,7 +52,7 @@ export async function getBoss(): Promise<PgBoss> {
   // Register the reminder job handler
   await boss.work<ReminderJobData>(
     REMINDER_QUEUE,
-    { newJobCheckInterval: 1000 },
+    { pollingIntervalSeconds: 1 },
     handleReminderJob
   );
 
@@ -103,7 +99,7 @@ export async function scheduleReminder(
 export async function cancelReminder(jobId: string): Promise<void> {
   try {
     const boss = await getBoss();
-    await boss.cancel(jobId);
+    await boss.cancel(REMINDER_QUEUE, jobId);
   } catch (error) {
     // Job may already be completed/cancelled - that's OK
     console.error("[pg-boss] Cancel error (non-fatal):", error);
@@ -116,7 +112,7 @@ export async function cancelReminder(jobId: string): Promise<void> {
  * Updates reminder status to SENT.
  */
 export async function handleReminderJob(
-  jobs: PgBoss.Job<ReminderJobData>[]
+  jobs: Job<ReminderJobData>[]
 ): Promise<void> {
   for (const job of jobs) {
     const { reminder_id, task_id } = job.data;
