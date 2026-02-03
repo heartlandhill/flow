@@ -5,6 +5,7 @@ import { TopBar } from "@/components/layout/TopBar";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { QuickCaptureWrapper } from "@/components/layout/QuickCaptureWrapper";
+import { SelectedTaskWrapper } from "@/components/layout/SelectedTaskWrapper";
 
 export const metadata: Metadata = {
   title: "Flow GTD",
@@ -25,7 +26,8 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-[var(--bg-root)] text-[var(--text-primary)]">
-        <QuickCaptureWrapper>
+        <SelectedTaskWrapper>
+          <QuickCaptureWrapper>
           {/* Mobile Header - visible below md breakpoint */}
           <div className="md:hidden">
             <MobileHeader />
@@ -59,6 +61,7 @@ export default function RootLayout({
             <BottomNav />
           </div>
         </QuickCaptureWrapper>
+        </SelectedTaskWrapper>
       </body>
     </html>
   );

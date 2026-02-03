@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { NoteIcon } from "@/components/ui/Icons";
+import { useSelectedTask } from "@/context/SelectedTaskContext";
 import type { TaskWithRelations } from "@/types";
 
 interface TaskRowProps {
@@ -78,6 +79,7 @@ function getAreaColor(areaColor: string | null | undefined): string {
 export function TaskRow({ task, onComplete, onSelect }: TaskRowProps) {
   // Animation state: 'idle' | 'completing' | 'fading'
   const [animationState, setAnimationState] = useState<"idle" | "completing" | "fading">("idle");
+  const { selectTask } = useSelectedTask();
 
   const handleCheck = useCallback(() => {
     if (animationState !== "idle") return;
@@ -98,8 +100,11 @@ export function TaskRow({ task, onComplete, onSelect }: TaskRowProps) {
 
   const handleRowClick = useCallback(() => {
     if (animationState !== "idle") return;
+    // Pass full task data to context for TaskDetailPanel
+    selectTask(task);
+    // Also call onSelect for backwards compatibility
     onSelect?.(task.id);
-  }, [animationState, onSelect, task.id]);
+  }, [animationState, selectTask, task, onSelect]);
 
   const dueDateInfo = getDueDateInfo(task.due_date);
   const hasNotes = task.notes && task.notes.trim().length > 0;
