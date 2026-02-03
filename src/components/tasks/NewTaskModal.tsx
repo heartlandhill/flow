@@ -400,7 +400,14 @@ export function NewTaskModal({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="text-[14px] font-medium text-[var(--text-secondary)] hover:opacity-80 transition-opacity disabled:opacity-60"
+            className={`
+              px-4 py-1.5
+              text-[14px] font-medium
+              text-[var(--text-secondary)]
+              hover:text-[var(--text-primary)]
+              transition-colors duration-150
+              disabled:opacity-60
+            `}
           >
             Cancel
           </button>
