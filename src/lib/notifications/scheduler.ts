@@ -157,6 +157,47 @@ export async function snoozeReminder(
 }
 
 /**
+ * Dismisses a reminder by canceling the job and marking the task as complete.
+ * Called when the user taps "Done ✓" on a notification.
+ *
+ * @param reminderId - The ID of the reminder to dismiss
+ */
+export async function dismissReminder(reminderId: string): Promise<void> {
+  const bossInstance = await getBoss();
+
+  const reminder = await prisma.reminder.findUnique({
+    where: { id: reminderId },
+  });
+
+  if (!reminder) {
+    throw new Error("Reminder not found");
+  }
+
+  // Cancel the existing job if one exists
+  if (reminder.pgboss_job_id) {
+    await bossInstance.cancel(REMINDER_QUEUE, reminder.pgboss_job_id);
+  }
+
+  // Update reminder status to dismissed
+  await prisma.reminder.update({
+    where: { id: reminderId },
+    data: {
+      status: "DISMISSED",
+      pgboss_job_id: null,
+    },
+  });
+
+  // Mark the associated task as complete
+  await prisma.task.update({
+    where: { id: reminder.task_id },
+    data: {
+      completed: true,
+      completed_at: new Date(),
+    },
+  });
+}
+
+/**
  * Fans out a notification to all active subscription channels.
  * Currently supports ntfy; Web Push to be added later.
  */
