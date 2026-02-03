@@ -71,6 +71,11 @@ export function ProjectsList({
     setIsAreaModalOpen(false);
   }, []);
 
+  // Handle areas changed - refresh the page to update project groupings
+  const handleAreasChanged = useCallback(() => {
+    router.refresh();
+  }, [router]);
+
   // Navigate to project detail page after creation
   const handleProjectCreated = useCallback((projectId: string) => {
     router.push(`/projects/${projectId}`);
@@ -166,6 +171,7 @@ export function ProjectsList({
         <AreaManagementModal
           isOpen={isAreaModalOpen}
           onClose={handleCloseAreaModal}
+          onAreasChanged={handleAreasChanged}
         />
       </>
     );
@@ -282,6 +288,7 @@ export function ProjectsList({
       <AreaManagementModal
         isOpen={isAreaModalOpen}
         onClose={handleCloseAreaModal}
+        onAreasChanged={handleAreasChanged}
       />
     </div>
   );
