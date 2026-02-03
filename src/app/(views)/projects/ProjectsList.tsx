@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useTransition, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { AreaGroup } from "@/components/projects/AreaGroup";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { NewProjectModal } from "@/components/projects/NewProjectModal";
@@ -38,6 +39,8 @@ export function ProjectsList({
   allAreas,
   isEmpty,
 }: ProjectsListProps) {
+  // Router for navigation after project creation
+  const router = useRouter();
   // Modal state for NewProjectModal
   const [isModalOpen, setIsModalOpen] = useState(false);
   // Track which tasks are being completed to prevent double-clicks
@@ -55,6 +58,11 @@ export function ProjectsList({
   const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
   }, []);
+
+  // Navigate to project detail page after creation
+  const handleProjectCreated = useCallback((projectId: string) => {
+    router.push(`/projects/${projectId}`);
+  }, [router]);
 
   // Filter tasks within projects based on search query
   const filteredAreas = useMemo(() => {
@@ -119,6 +127,7 @@ export function ProjectsList({
           isOpen={isModalOpen}
           onClose={handleCloseModal}
           areas={allAreas}
+          onCreated={handleProjectCreated}
         />
       </>
     );
@@ -209,6 +218,7 @@ export function ProjectsList({
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         areas={allAreas}
+        onCreated={handleProjectCreated}
       />
     </div>
   );
