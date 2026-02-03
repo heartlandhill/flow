@@ -197,9 +197,12 @@ export function NewProjectModal({
       {/* Modal Card */}
       <div
         className={`
-          /* Position at 15vh from top */
-          mt-[15vh]
-          h-fit
+          /* Position at 15vh from top, reduced on mobile for more space */
+          mt-[10vh] md:mt-[15vh]
+
+          /* Max height with flex layout for overflow handling */
+          max-h-[80vh]
+          flex flex-col
 
           /* Width: mobile calc(100% - 32px) max 420px, desktop 440px */
           w-[calc(100%-32px)] max-w-[420px]
@@ -217,7 +220,7 @@ export function NewProjectModal({
         `}
       >
         {/* Header */}
-        <div className="flex items-center gap-2 px-4 pt-4 pb-2">
+        <div className="flex items-center gap-2 px-4 pt-4 pb-2 flex-shrink-0">
           <span
             id="new-project-title"
             className={`
@@ -230,8 +233,8 @@ export function NewProjectModal({
           </span>
         </div>
 
-        {/* Form Content */}
-        <div className="px-4 py-2 space-y-4">
+        {/* Form Content - scrollable */}
+        <div className="px-4 py-2 space-y-4 flex-1 overflow-y-auto">
           {/* Name Input */}
           <div>
             <input
@@ -313,6 +316,8 @@ export function NewProjectModal({
                       rounded-[6px]
                       shadow-lg
                       z-10
+                      /* Limit height with scrollable overflow for many areas */
+                      max-h-[150px] overflow-y-auto
                       animate-in fade-in slide-in-from-top-1 duration-100
                     `}
                   >
@@ -356,13 +361,13 @@ export function NewProjectModal({
 
         {/* Error message */}
         {error && (
-          <div className="px-4 pb-2">
+          <div className="px-4 pb-2 flex-shrink-0">
             <p className="text-[12px] text-[#E88B8B]">{error}</p>
           </div>
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-4 pb-4 pt-2">
+        <div className="flex items-center justify-between px-4 pb-4 pt-2 flex-shrink-0">
           {/* Hint text */}
           <span className="text-[12px] text-[var(--text-tertiary)]">
             Press <kbd className="font-medium">Enter</kbd> to create
