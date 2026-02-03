@@ -20,11 +20,13 @@ import {
 import { SortableTaskRow } from "@/components/tasks/SortableTaskRow";
 import { completeTask, reorderTasks } from "@/actions/tasks";
 import { useSearch } from "@/context/SearchContext";
-import type { TaskWithRelations } from "@/types";
+import { getFirstIncompleteTaskId } from "@/lib/task-utils";
+import type { TaskWithRelations, ProjectType } from "@/types";
 
 interface ProjectDetailListProps {
   initialTasks: TaskWithRelations[];
   projectId: string;
+  projectType: ProjectType;
 }
 
 /**
@@ -36,6 +38,7 @@ interface ProjectDetailListProps {
 export function ProjectDetailList({
   initialTasks,
   projectId,
+  projectType,
 }: ProjectDetailListProps) {
   // Local state for optimistic updates
   const [tasks, setTasks] = useState<TaskWithRelations[]>(initialTasks);
@@ -72,6 +75,16 @@ export function ProjectDetailList({
   }, [tasks, query]);
 
   const isSearchActive = query.trim().length > 0;
+
+  // For SEQUENTIAL projects, identify the first incomplete task (the "available" one)
+  const firstIncompleteId = projectType === "SEQUENTIAL"
+    ? getFirstIncompleteTaskId(tasks)
+    : null;
+
+  // Helper to check if a task is available
+  const isTaskAvailable = (taskId: string) => {
+    return projectType === "PARALLEL" || taskId === firstIncompleteId;
+  };
 
   const handleComplete = useCallback(
     (taskId: string) => {
@@ -193,16 +206,28 @@ export function ProjectDetailList({
               Showing results for &apos;{query}&apos;
             </div>
           )}
-          {filteredTasks.map((task) => (
-            <SortableTaskRow
-              key={task.id}
-              // Hide project pill since we're already viewing this project
-              task={{ ...task, project: null }}
-              // Pass full task data to context for TaskDetailPanel
-              contextTask={task}
-              onComplete={handleComplete}
-            />
-          ))}
+          {filteredTasks.map((task) => {
+            const available = isTaskAvailable(task.id);
+            return (
+              <div
+                key={task.id}
+                className={`relative ${!available ? "opacity-50" : ""}`}
+              >
+                <SortableTaskRow
+                  // Hide project pill since we're already viewing this project
+                  task={{ ...task, project: null }}
+                  // Pass full task data to context for TaskDetailPanel
+                  contextTask={task}
+                  onComplete={handleComplete}
+                />
+                {!available && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[var(--text-tertiary)]">
+                    (waiting)
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
       </SortableContext>
     </DndContext>

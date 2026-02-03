@@ -154,7 +154,7 @@ export default async function ProjectDetailPage({
         {typedTasks.length === 0 ? (
           <EmptyState hasCompletedTasks={totalTasks > 0} />
         ) : (
-          <ProjectDetailList initialTasks={typedTasks} projectId={id} />
+          <ProjectDetailList initialTasks={typedTasks} projectId={id} projectType={project.type} />
         )}
       </main>
     </div>
