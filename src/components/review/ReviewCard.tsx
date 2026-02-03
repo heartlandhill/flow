@@ -271,15 +271,27 @@ function NextActionsList({
   const incompleteTasks = tasks.filter((task) => !task.completed);
 
   // Convert TaskWithTags to TaskWithRelations for TaskRow
-  // Pass project: null since we're already viewing the project
-  const tasksWithRelations: TaskWithRelations[] = incompleteTasks.map((task) => ({
-    ...task,
-    project: null,
-    reminders: [],
+  // Pass project: null for display since we're already viewing the project,
+  // but keep full task data as contextTask for TaskDetailPanel
+  const tasksForDisplay: Array<{
+    displayTask: TaskWithRelations;
+    contextTask: TaskWithRelations;
+  }> = incompleteTasks.map((task) => ({
+    // Display task has project: null to hide redundant project pill
+    displayTask: {
+      ...task,
+      project: null,
+      reminders: [],
+    },
+    // Context task preserves full data for TaskDetailPanel
+    contextTask: {
+      ...task,
+      reminders: [],
+    },
   }));
 
   // Edge case: no tasks or all completed
-  if (tasksWithRelations.length === 0) {
+  if (tasksForDisplay.length === 0) {
     return (
       <div className="py-4 text-center">
         <p className="text-[14px] text-[var(--text-secondary)] italic">
@@ -291,10 +303,11 @@ function NextActionsList({
 
   return (
     <div className="-mx-2">
-      {tasksWithRelations.map((task) => (
+      {tasksForDisplay.map(({ displayTask, contextTask }) => (
         <TaskRow
-          key={task.id}
-          task={task}
+          key={displayTask.id}
+          task={displayTask}
+          contextTask={contextTask}
           onComplete={onTaskComplete}
         />
       ))}
