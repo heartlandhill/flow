@@ -13,7 +13,7 @@ import { InboxIcon } from "@/components/ui/Icons";
  * - Sidebar "Quick Capture" button
  */
 export function QuickCapture() {
-  const { isOpen, close } = useQuickCapture();
+  const { isOpen, close, projectId, projectName, areaColor } = useQuickCapture();
   const [title, setTitle] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -126,20 +126,42 @@ export function QuickCapture() {
       >
         {/* Header */}
         <div className="flex items-center gap-2 px-4 pt-4 pb-2">
-          <InboxIcon
-            size={16}
-            className="text-[var(--text-tertiary)]"
-          />
-          <span
-            id="quick-capture-title"
-            className={`
-              text-[12px] font-medium tracking-[0.8px]
-              text-[var(--text-tertiary)]
-              uppercase
-            `}
-          >
-            New Inbox Item
-          </span>
+          {projectName ? (
+            <>
+              {/* Colored dot matching area */}
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: areaColor || "var(--accent)" }}
+              />
+              <span
+                id="quick-capture-title"
+                className={`
+                  text-[12px] font-medium tracking-[0.8px]
+                  text-[var(--text-tertiary)]
+                  uppercase
+                `}
+              >
+                New Task in {projectName}
+              </span>
+            </>
+          ) : (
+            <>
+              <InboxIcon
+                size={16}
+                className="text-[var(--text-tertiary)]"
+              />
+              <span
+                id="quick-capture-title"
+                className={`
+                  text-[12px] font-medium tracking-[0.8px]
+                  text-[var(--text-tertiary)]
+                  uppercase
+                `}
+              >
+                New Inbox Item
+              </span>
+            </>
+          )}
         </div>
 
         {/* Input */}
