@@ -175,3 +175,52 @@ export async function updateProject(
     return { success: false, error: "Failed to update project" };
   }
 }
+
+/**
+ * Server action to mark a project as reviewed.
+ * Updates last_reviewed_at to now and calculates next_review_date based on review_interval_days.
+ */
+export async function markProjectReviewed(
+  id: string
+): Promise<ActionResult> {
+  try {
+    // Validate project ID
+    if (!id || typeof id !== "string") {
+      return { success: false, error: "Project ID is required" };
+    }
+
+    // Find the project
+    const project = await prisma.project.findUnique({
+      where: { id },
+    });
+
+    if (!project) {
+      return { success: false, error: "Project not found" };
+    }
+
+    if (!project.review_interval_days) {
+      return { success: false, error: "Project has no review interval" };
+    }
+
+    // Calculate next review date
+    const nextReview = new Date();
+    nextReview.setDate(nextReview.getDate() + project.review_interval_days);
+
+    // Update the project with review timestamps
+    await prisma.project.update({
+      where: { id },
+      data: {
+        last_reviewed_at: new Date(),
+        next_review_date: nextReview,
+      },
+    });
+
+    // Revalidate the review view
+    revalidatePath("/review");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Mark project reviewed error:", error);
+    return { success: false, error: "Failed to mark project as reviewed" };
+  }
+}
