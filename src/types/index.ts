@@ -113,3 +113,21 @@ export interface ActionResult<T = undefined> {
   error?: string;
   data?: T;
 }
+
+// Input type for updateTask server action
+// All fields are optional since partial updates are allowed
+export interface UpdateTaskInput {
+  title?: string;
+  notes?: string | null;
+  project_id?: string | null;
+  due_date?: Date | null;
+  defer_date?: Date | null;
+  tagIds?: string[];
+}
+
+// Input type for clarifyTask server action
+// Used for explicit inbox clarification workflow
+export interface ClarifyInput {
+  project_id: string | null;
+  tagIds: string[];
+}
