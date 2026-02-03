@@ -26,6 +26,8 @@ export async function createTask(title: string): Promise<ActionResult<Task>> {
 
     // Revalidate inbox to show new task
     revalidatePath("/inbox");
+    // Revalidate layout to update navigation badge counts
+    revalidatePath("/", "layout");
 
     return { success: true, data: task };
   } catch (error) {
@@ -89,6 +91,8 @@ export async function completeTask(taskId: string): Promise<ActionResult> {
     revalidatePath("/forecast");
     revalidatePath("/projects");
     revalidatePath("/tags");
+    // Revalidate layout to update navigation badge counts
+    revalidatePath("/", "layout");
 
     return { success: true };
   } catch (error) {
@@ -205,6 +209,8 @@ export async function updateTask(
     revalidatePath("/forecast");
     revalidatePath("/projects");
     revalidatePath("/tags");
+    // Revalidate layout to update navigation badge counts
+    revalidatePath("/", "layout");
 
     return { success: true, data: updatedTask };
   } catch (error) {
@@ -262,6 +268,8 @@ export async function clarifyTask(
     revalidatePath("/forecast");
     revalidatePath("/projects");
     revalidatePath("/tags");
+    // Revalidate layout to update navigation badge counts
+    revalidatePath("/", "layout");
 
     return { success: true, data: updatedTask };
   } catch (error) {
@@ -301,6 +309,8 @@ export async function deleteTask(taskId: string): Promise<ActionResult> {
     revalidatePath("/forecast");
     revalidatePath("/projects");
     revalidatePath("/tags");
+    // Revalidate layout to update navigation badge counts
+    revalidatePath("/", "layout");
 
     return { success: true };
   } catch (error) {
