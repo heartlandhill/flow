@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import { CloseIcon } from "@/components/ui/Icons";
 import { TaskDetailContent } from "@/components/tasks/TaskDetailContent";
 import { useSelectedTask } from "@/context/SelectedTaskContext";
+import { useOverlay } from "@/context/OverlayContext";
 
 // Simplified type for project dropdown - just need id, name
 interface ProjectForDropdown {
@@ -40,8 +42,17 @@ interface TaskDetailSheetProps {
  */
 export function TaskDetailSheet({ areasWithProjects = [], allTags = [] }: TaskDetailSheetProps) {
   const { selectedTask, clearSelectedTask } = useSelectedTask();
+  const { registerOverlay, unregisterOverlay } = useOverlay();
 
   const isOpen = selectedTask !== null;
+
+  // Register overlay when sheet is open
+  useEffect(() => {
+    if (isOpen) {
+      registerOverlay('task-detail-sheet');
+      return () => unregisterOverlay('task-detail-sheet');
+    }
+  }, [isOpen, registerOverlay, unregisterOverlay]);
 
   return (
     <div className="md:hidden">
