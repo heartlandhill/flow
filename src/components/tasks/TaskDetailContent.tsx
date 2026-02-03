@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { ForecastIcon, CloseIcon } from "@/components/ui/Icons";
-import type { TaskWithRelations } from "@/types";
+import { updateTask } from "@/actions/tasks";
+import type { TaskWithRelations, UpdateTaskInput } from "@/types";
 
 // Simplified type for project dropdown - just need id, name, and area info
 interface ProjectForDropdown {
@@ -159,6 +160,8 @@ function getAreaColor(areaColor: string | null | undefined): string {
 export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], allTags = [] }: TaskDetailContentProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Helper to convert Date to YYYY-MM-DD string for input type="date"
   const dateToInputString = (date: Date | null): string => {
@@ -214,6 +217,7 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
     setEditedDueDate(dateToInputString(task.due_date));
     setEditedDeferDate(dateToInputString(task.defer_date));
     setEditedTagIds(new Set(task.tags.map((t) => t.tag_id)));
+    setError(null);
     setIsEditing(true);
     onEditClick?.();
   };
@@ -227,6 +231,7 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
     setEditedDueDate(dateToInputString(task.due_date));
     setEditedDeferDate(dateToInputString(task.defer_date));
     setEditedTagIds(new Set(task.tags.map((t) => t.tag_id)));
+    setError(null);
     setIsEditing(false);
   };
 
@@ -263,6 +268,50 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
     // TODO: Call deleteTask server action
     setShowDeleteConfirm(false);
   }, []);
+
+  // Handle form submission - saves all edited fields
+  const handleSubmit = useCallback(async () => {
+    // Don't submit if empty title or already submitting
+    const trimmedTitle = editedTitle.trim();
+    if (!trimmedTitle || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      // Build update data object
+      const updateData: UpdateTaskInput = {
+        title: trimmedTitle,
+        notes: editedNotes || null,
+        project_id: editedProjectId,
+        due_date: editedDueDate ? new Date(editedDueDate) : null,
+        defer_date: editedDeferDate ? new Date(editedDeferDate) : null,
+        tagIds: Array.from(editedTagIds),
+      };
+
+      const result = await updateTask(task.id, updateData);
+
+      if (result.success) {
+        // Exit edit mode on success - the view will refresh via revalidatePath
+        setIsEditing(false);
+      } else {
+        setError(result.error || "Failed to save task");
+      }
+    } catch {
+      setError("Failed to save task");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [
+    editedTitle,
+    editedNotes,
+    editedProjectId,
+    editedDueDate,
+    editedDeferDate,
+    editedTagIds,
+    task.id,
+    isSubmitting,
+  ]);
 
   // Handle overlay click for delete confirmation dialog
   const handleDeleteOverlayClick = useCallback(
@@ -540,6 +589,13 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
           )
         )}
 
+        {/* Error message - shown in edit mode when there's an error */}
+        {isEditing && error && (
+          <div className="mt-4">
+            <p className="text-[12px] text-[#E88B8B]">{error}</p>
+          </div>
+        )}
+
         {/* Action buttons - only shown in edit mode */}
         {isEditing && (
           <>
@@ -547,7 +603,8 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
             <div className="flex flex-col gap-2 md:hidden mt-4">
               <button
                 type="button"
-                disabled={!editedTitle.trim()}
+                onClick={handleSubmit}
+                disabled={!editedTitle.trim() || isSubmitting}
                 className={`
                   w-full py-2.5
                   text-[14px] font-medium
@@ -560,11 +617,12 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
                   disabled:opacity-50 disabled:cursor-not-allowed
                 `}
               >
-                Save
+                {isSubmitting ? "Saving..." : "Save"}
               </button>
               <button
                 type="button"
                 onClick={handleCancelClick}
+                disabled={isSubmitting}
                 className={`
                   w-full py-2.5
                   text-[14px] font-medium
@@ -575,6 +633,7 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
                   transition-all duration-150
                   hover:opacity-80
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
+                  disabled:opacity-50 disabled:cursor-not-allowed
                 `}
               >
                 Cancel
@@ -582,6 +641,7 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
               <button
                 type="button"
                 onClick={handleDeleteClick}
+                disabled={isSubmitting}
                 className={`
                   w-full py-2.5
                   text-[14px] font-medium
@@ -591,6 +651,7 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
                   transition-all duration-150
                   hover:opacity-80
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E88B8B] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
+                  disabled:opacity-50 disabled:cursor-not-allowed
                 `}
               >
                 Delete
@@ -602,6 +663,7 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
               <button
                 type="button"
                 onClick={handleDeleteClick}
+                disabled={isSubmitting}
                 className={`
                   px-4 py-2
                   text-[14px] font-medium
@@ -611,6 +673,7 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
                   transition-all duration-150
                   hover:opacity-80
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E88B8B] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
+                  disabled:opacity-50 disabled:cursor-not-allowed
                 `}
               >
                 Delete
@@ -619,6 +682,7 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
                 <button
                   type="button"
                   onClick={handleCancelClick}
+                  disabled={isSubmitting}
                   className={`
                     px-4 py-2
                     text-[14px] font-medium
@@ -629,13 +693,15 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
                     transition-all duration-150
                     hover:opacity-80
                     focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
+                    disabled:opacity-50 disabled:cursor-not-allowed
                   `}
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  disabled={!editedTitle.trim()}
+                  onClick={handleSubmit}
+                  disabled={!editedTitle.trim() || isSubmitting}
                   className={`
                     px-4 py-2
                     text-[14px] font-medium
@@ -648,7 +714,7 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
                     disabled:opacity-50 disabled:cursor-not-allowed
                   `}
                 >
-                  Save
+                  {isSubmitting ? "Saving..." : "Save"}
                 </button>
               </div>
             </div>
