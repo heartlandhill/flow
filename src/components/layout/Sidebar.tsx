@@ -11,6 +11,7 @@ import {
   ReviewIcon,
   PlusIcon,
 } from '@/components/ui/Icons';
+import { Logo } from '@/components/ui/Logo';
 import { useQuickCapture } from '@/hooks/useQuickCapture';
 import { useSelectedTask } from '@/context/SelectedTaskContext';
 import type { BadgeCounts } from '@/lib/queries/badge-counts';
@@ -56,12 +57,7 @@ export function Sidebar({ badgeCounts }: SidebarProps) {
     <aside className="w-60 h-screen bg-[var(--bg-sidebar)] border-r border-[var(--border)] flex flex-col">
       {/* Brand */}
       <div className="flex items-center gap-2.5 px-4 py-5">
-        <div
-          className="w-7 h-7 rounded-lg"
-          style={{
-            background: 'linear-gradient(135deg, var(--accent) 0%, #C47A5A 100%)',
-          }}
-        />
+        <Logo size={28} />
         <span className="font-display text-lg font-medium text-[var(--text-primary)]">
           Flow
         </span>

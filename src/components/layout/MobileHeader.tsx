@@ -15,6 +15,7 @@ import {
   PlusIcon,
   CloseIcon,
 } from '@/components/ui/Icons';
+import { Logo } from '@/components/ui/Logo';
 
 interface NavItem {
   href: string;
@@ -88,12 +89,7 @@ export function MobileHeader() {
       <header className="fixed top-0 left-0 right-0 h-14 bg-[var(--bg-sidebar)] border-b border-[var(--border)] flex items-center justify-between px-4 z-40">
         {/* Brand */}
         <div className="flex items-center gap-2">
-          <div
-            className="w-7 h-7 rounded-lg"
-            style={{
-              background: 'linear-gradient(135deg, var(--accent) 0%, #C47A5A 100%)',
-            }}
-          />
+          <Logo size={28} />
           <span className="font-display text-base font-medium text-[var(--text-primary)]">
             Flow
           </span>
