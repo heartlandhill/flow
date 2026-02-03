@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import type { ActionResult, Tag } from "@/types";
+import type { ActionResult, Tag, TagWithCount } from "@/types";
 
 /**
  * Server action to create a new tag.
@@ -160,4 +160,26 @@ export async function setTaskTags(
     console.error("Set task tags error:", error);
     return { success: false, error: "Failed to set task tags" };
   }
+}
+
+/**
+ * Query function to get all tags with their incomplete task counts.
+ * Used by the tag management modal to display task counts next to each tag.
+ * Returns tags ordered by sort_order with _count of incomplete tasks.
+ */
+export async function getTagsWithTaskCounts(): Promise<TagWithCount[]> {
+  const tags = await prisma.tag.findMany({
+    orderBy: { sort_order: "asc" },
+    include: {
+      _count: {
+        select: {
+          tasks: {
+            where: { task: { completed: false } },
+          },
+        },
+      },
+    },
+  });
+
+  return tags;
 }
