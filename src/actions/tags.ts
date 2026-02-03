@@ -36,6 +36,59 @@ export async function createTag(data: {
 }
 
 /**
+ * Server action to update an existing tag.
+ * Updates the tag name and/or icon.
+ */
+export async function updateTag(
+  tagId: string,
+  data: {
+    name?: string;
+    icon?: string | null;
+  }
+): Promise<ActionResult<Tag>> {
+  try {
+    // Validate tag ID
+    if (!tagId || typeof tagId !== "string") {
+      return { success: false, error: "Tag ID is required" };
+    }
+
+    // Validate that at least one field is being updated
+    if (data.name === undefined && data.icon === undefined) {
+      return { success: false, error: "No update data provided" };
+    }
+
+    // Validate name if provided
+    if (data.name !== undefined) {
+      if (typeof data.name !== "string" || data.name.trim().length === 0) {
+        return { success: false, error: "Tag name cannot be empty" };
+      }
+    }
+
+    // Build update data object
+    const updateData: { name?: string; icon?: string | null } = {};
+    if (data.name !== undefined) {
+      updateData.name = data.name.trim();
+    }
+    if (data.icon !== undefined) {
+      updateData.icon = data.icon;
+    }
+
+    const tag = await prisma.tag.update({
+      where: { id: tagId },
+      data: updateData,
+    });
+
+    // Revalidate tags view to show updated tag
+    revalidatePath("/tags");
+
+    return { success: true, data: tag };
+  } catch (error) {
+    console.error("Update tag error:", error);
+    return { success: false, error: "Failed to update tag" };
+  }
+}
+
+/**
  * Server action to set the tags for a task.
  * Replaces all existing tags with the provided tag IDs.
  * Uses a transaction to ensure atomicity.
