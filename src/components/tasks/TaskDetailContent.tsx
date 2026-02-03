@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { ForecastIcon, CloseIcon } from "@/components/ui/Icons";
-import { updateTask } from "@/actions/tasks";
+import { updateTask, deleteTask } from "@/actions/tasks";
+import { useSelectedTask } from "@/context/SelectedTaskContext";
 import type { TaskWithRelations, UpdateTaskInput } from "@/types";
 
 // Simplified type for project dropdown - just need id, name, and area info
@@ -158,9 +159,11 @@ function getAreaColor(areaColor: string | null | undefined): string {
  * Shared between mobile bottom sheet and desktop side panel.
  */
 export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], allTags = [] }: TaskDetailContentProps) {
+  const { clearSelectedTask } = useSelectedTask();
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Helper to convert Date to YYYY-MM-DD string for input type="date"
@@ -263,11 +266,30 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
     setShowDeleteConfirm(false);
   };
 
-  // Handle confirm delete - will call deleteTask action in a later subtask
-  const handleConfirmDelete = useCallback(() => {
-    // TODO: Call deleteTask server action
-    setShowDeleteConfirm(false);
-  }, []);
+  // Handle confirm delete - calls deleteTask and closes panel on success
+  const handleConfirmDelete = useCallback(async () => {
+    if (isDeleting) return;
+
+    setIsDeleting(true);
+    setError(null);
+
+    try {
+      const result = await deleteTask(task.id);
+
+      if (result.success) {
+        // Close panel on success - view will refresh via revalidatePath
+        clearSelectedTask();
+      } else {
+        setError(result.error || "Failed to delete task");
+        setShowDeleteConfirm(false);
+      }
+    } catch {
+      setError("Failed to delete task");
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [task.id, isDeleting, clearSelectedTask]);
 
   // Handle form submission - saves all edited fields
   const handleSubmit = useCallback(async () => {
@@ -767,6 +789,7 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
               <button
                 type="button"
                 onClick={handleCancelDelete}
+                disabled={isDeleting}
                 className={`
                   flex-1 py-2.5
                   text-[14px] font-medium
@@ -777,6 +800,7 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
                   transition-all duration-150
                   hover:opacity-80
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
+                  disabled:opacity-50 disabled:cursor-not-allowed
                 `}
               >
                 Cancel
@@ -784,6 +808,7 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
               <button
                 type="button"
                 onClick={handleConfirmDelete}
+                disabled={isDeleting}
                 className={`
                   flex-1 py-2.5
                   text-[14px] font-medium
@@ -793,9 +818,10 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
                   transition-all duration-150
                   hover:opacity-90
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E88B8B] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
+                  disabled:opacity-50 disabled:cursor-not-allowed
                 `}
               >
-                Delete
+                {isDeleting ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>
