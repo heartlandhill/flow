@@ -390,7 +390,7 @@ export function EditProjectModal({
                       border border-[var(--border)]
                       rounded-[6px]
                       shadow-lg
-                      z-10
+                      z-20
                       animate-in fade-in slide-in-from-top-1 duration-100
                     `}
                   >
@@ -604,7 +604,7 @@ export function EditProjectModal({
                     border border-[var(--border)]
                     rounded-[6px]
                     shadow-lg
-                    z-10
+                    z-20
                     animate-in fade-in slide-in-from-top-1 duration-100
                   `}
                 >

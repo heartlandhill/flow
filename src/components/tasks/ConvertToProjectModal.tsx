@@ -47,7 +47,6 @@ export function ConvertToProjectModal({
 }: ConvertToProjectModalProps) {
   // Form state (no name input - uses taskTitle)
   const [areaId, setAreaId] = useState("");
-  const [projectType, setProjectType] = useState<"PARALLEL" | "SEQUENTIAL">("SEQUENTIAL");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,7 +72,6 @@ export function ConvertToProjectModal({
       // Delay clearing form fields to allow close animation
       const timer = setTimeout(() => {
         setAreaId("");
-        setProjectType("SEQUENTIAL");
         setError(null);
       }, 200);
       return () => clearTimeout(timer);
@@ -134,7 +132,7 @@ export function ConvertToProjectModal({
     setError(null);
 
     try {
-      const result = await convertTaskToProject(taskId, areaId, projectType);
+      const result = await convertTaskToProject(taskId, areaId, "SEQUENTIAL");
 
       if (result.success && result.data) {
         onClose();
@@ -148,7 +146,7 @@ export function ConvertToProjectModal({
     } finally {
       setIsSubmitting(false);
     }
-  }, [taskId, areaId, projectType, isSubmitting, onClose, onConverted]);
+  }, [taskId, areaId, isSubmitting, onClose, onConverted]);
 
   // Handle area selection from custom dropdown
   const handleAreaSelect = useCallback((selectedAreaId: string) => {
@@ -342,62 +340,6 @@ export function ConvertToProjectModal({
             )}
           </div>
 
-          {/* Type Toggle - Single switch with labels */}
-          <div>
-            <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
-              Type
-            </label>
-            <button
-              type="button"
-              onClick={() => setProjectType(projectType === "SEQUENTIAL" ? "PARALLEL" : "SEQUENTIAL")}
-              disabled={isSubmitting}
-              className={`
-                relative w-full h-[38px]
-                bg-[var(--bg-surface)]
-                border border-[var(--border)]
-                rounded-[6px]
-                transition-colors duration-150
-                disabled:opacity-60
-                focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]
-              `}
-            >
-              {/* Sliding indicator */}
-              <span
-                className={`
-                  absolute top-[3px] bottom-[3px] w-[calc(50%-4px)]
-                  bg-[var(--bg-card)]
-                  border border-[var(--border)]
-                  rounded-[4px]
-                  shadow-sm
-                  transition-all duration-200 ease-out
-                  ${projectType === "SEQUENTIAL" ? "left-[3px]" : "left-[calc(50%+2px)]"}
-                `}
-              />
-              {/* Labels */}
-              <span className="relative z-10 flex h-full">
-                <span
-                  className={`
-                    flex-1 flex items-center justify-center
-                    text-[13px] font-medium
-                    transition-colors duration-150
-                    ${projectType === "SEQUENTIAL" ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}
-                  `}
-                >
-                  Sequential
-                </span>
-                <span
-                  className={`
-                    flex-1 flex items-center justify-center
-                    text-[13px] font-medium
-                    transition-colors duration-150
-                    ${projectType === "PARALLEL" ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}
-                  `}
-                >
-                  Parallel
-                </span>
-              </span>
-            </button>
-          </div>
         </div>
 
         {/* Error message */}
