@@ -20,7 +20,7 @@ function QuickCaptureContent({ children }: QuickCaptureWrapperProps) {
     <>
       {children}
       <QuickCapture />
-      <FAB onClick={open} />
+      <FAB onClick={() => open()} />
     </>
   );
 }
