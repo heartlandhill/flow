@@ -93,10 +93,10 @@ export default async function ProjectsPage() {
   const hasAnyContent = hasActiveProjects || hasSomedayProjects;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full view-content">
       {/* Header */}
       <header className="flex items-baseline gap-3 px-4 pt-6 pb-4 md:px-6 md:pt-8 md:pb-5">
-        <h1 className="font-display text-[26px] md:text-[28px] font-normal text-[var(--text-primary)]">
+        <h1 className="font-display text-[26px] md:text-[28px] font-medium text-[var(--text-primary)]">
           Projects
         </h1>
         {totalActiveProjects > 0 && (
@@ -127,11 +127,11 @@ export default async function ProjectsPage() {
  */
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
-      <span className="text-[48px] mb-4" role="img" aria-label="Folder">
+    <div className="flex flex-col items-center py-12 px-5 text-center">
+      <span className="text-[32px] mb-2.5" role="img" aria-label="Folder">
         📁
       </span>
-      <p className="font-display text-lg text-[var(--text-secondary)]">
+      <p className="text-[14px] text-[var(--text-tertiary)]">
         No projects yet — create one to get started
       </p>
     </div>

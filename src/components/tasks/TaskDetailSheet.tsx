@@ -71,8 +71,8 @@ export function TaskDetailSheet({ areasWithProjects = [], allTags = [] }: TaskDe
               </button>
             </div>
 
-            {/* Content area with padding */}
-            <div className="px-4 pb-6">
+            {/* Content area with padding - matches reference: 4px 20px 32px */}
+            <div className="pt-1 px-5 pb-8">
               <TaskDetailContent
                 task={selectedTask}
                 areasWithProjects={areasWithProjects}

@@ -82,7 +82,7 @@ export function MobileHeader() {
         {/* Brand */}
         <div className="flex items-center gap-2">
           <div
-            className="w-6 h-6 rounded-md"
+            className="w-7 h-7 rounded-lg"
             style={{
               background: 'linear-gradient(135deg, var(--accent) 0%, #C47A5A 100%)',
             }}

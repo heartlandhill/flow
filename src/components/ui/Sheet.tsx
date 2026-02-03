@@ -117,7 +117,7 @@ export function Sheet({
           flex flex-col
 
           /* Animation: slide up from bottom */
-          transition-transform duration-250 ease-out
+          transition-transform duration-[250ms] ease-out
           ${isAnimating ? "translate-y-0" : "translate-y-full"}
         `}
       >

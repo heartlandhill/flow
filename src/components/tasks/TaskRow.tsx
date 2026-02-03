@@ -128,7 +128,7 @@ export function TaskRow({ task, onComplete, onSelect, contextTask }: TaskRowProp
       }}
       className={`
         flex items-start gap-3 cursor-pointer
-        rounded-md transition-all duration-300 ease-out
+        rounded-md transition-all ease-out
 
         /* Padding: 14px 12px mobile, 10px 12px desktop */
         py-3.5 px-3
@@ -140,8 +140,8 @@ export function TaskRow({ task, onComplete, onSelect, contextTask }: TaskRowProp
         /* Focus state */
         focus:outline-none focus-visible:bg-[var(--bg-hover)]
 
-        /* Fading animation state */
-        ${animationState === "fading" ? "opacity-30 scale-[0.97]" : "opacity-100 scale-100"}
+        /* Animation timing: checkbox 200ms, row fade 400ms, total 500ms */
+        ${animationState === "fading" ? "opacity-30 scale-[0.97] duration-[400ms]" : "opacity-100 scale-100 duration-150"}
       `}
     >
       {/* Checkbox */}

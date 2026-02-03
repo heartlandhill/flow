@@ -127,16 +127,11 @@ export function ReviewCard({
       {/* Area badge */}
       <div className="mb-2">
         <span
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-medium"
+          className="inline-block px-2.5 py-[3px] rounded-xl text-[11px] font-semibold text-[var(--bg-root)]"
           style={{
-            backgroundColor: `${areaColor}20`,
-            color: areaColor,
+            backgroundColor: areaColor,
           }}
         >
-          <span
-            className="w-2 h-2 rounded-full"
-            style={{ backgroundColor: areaColor }}
-          />
           {project.area.name}
         </span>
       </div>
@@ -149,23 +144,23 @@ export function ReviewCard({
       </h2>
 
       {/* Stats row */}
-      <div className="flex gap-6 mb-4">
+      <div className="flex gap-7 mb-3.5">
         {/* Remaining count */}
         <div className="flex flex-col">
-          <span className="text-[20px] md:text-[22px] font-semibold text-[var(--text-primary)]">
+          <span className="text-[20px] font-semibold text-[var(--text-primary)]">
             {stats.incompleteTasks}
           </span>
-          <span className="text-[10px] font-medium uppercase tracking-[0.8px] text-[var(--text-secondary)]">
+          <span className="text-[11px] uppercase tracking-[0.5px] text-[var(--text-tertiary)]">
             Remaining
           </span>
         </div>
 
         {/* Completion percentage */}
         <div className="flex flex-col">
-          <span className="text-[20px] md:text-[22px] font-semibold text-[var(--text-primary)]">
+          <span className="text-[20px] font-semibold text-[var(--text-primary)]">
             {stats.completionPercentage}%
           </span>
-          <span className="text-[10px] font-medium uppercase tracking-[0.8px] text-[var(--text-secondary)]">
+          <span className="text-[11px] uppercase tracking-[0.5px] text-[var(--text-tertiary)]">
             Complete
           </span>
         </div>
@@ -198,7 +193,7 @@ export function ReviewCard({
       <PromptingQuestionsCard />
 
       {/* Navigation buttons */}
-      <div className="flex gap-3 mt-6 flex-col md:flex-row md:justify-end">
+      <div className="flex gap-2.5 mt-5 flex-col md:flex-row md:justify-between">
         {/* Previous button - hidden on first project */}
         {!isFirstProject && (
           <button
@@ -206,16 +201,19 @@ export function ReviewCard({
             onClick={handlePrevious}
             disabled={isPending}
             className={`
-              px-4 py-2.5 rounded-lg
+              px-5 py-3 rounded-md
               text-[14px] font-medium
               bg-[var(--bg-surface)] text-[var(--text-secondary)]
+              border border-[var(--border)]
+              transition-all duration-150 ease-out
               hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]
-              transition-colors duration-150 ease-out
-              disabled:opacity-50 disabled:cursor-not-allowed
-              order-2 md:order-1
+              active:brightness-95
+              disabled:opacity-30 disabled:cursor-not-allowed
+              order-2 md:order-1 md:flex-1
+              text-center
             `}
           >
-            Previous
+            Back
           </button>
         )}
 
@@ -225,16 +223,17 @@ export function ReviewCard({
           onClick={handleMarkReviewed}
           disabled={isPending}
           className={`
-            px-4 py-2.5 rounded-lg
+            px-5 py-3 rounded-md
             text-[14px] font-medium
             bg-[var(--accent)] text-[var(--bg-root)]
-            hover:opacity-90
-            transition-opacity duration-150 ease-out
+            transition-all duration-150 ease-out
+            active:brightness-90
             disabled:opacity-50 disabled:cursor-not-allowed
-            order-1 md:order-2
+            order-1 md:order-2 md:flex-1
+            text-center
           `}
         >
-          {isPending ? "Saving..." : isLastProject ? "Finish Review" : "Mark Reviewed"}
+          {isPending ? "Saving..." : isLastProject ? "Done" : "Reviewed →"}
         </button>
       </div>
     </div>
@@ -334,15 +333,15 @@ function PromptingQuestionsCard() {
     <div
       className={`
         bg-[var(--bg-surface)]
-        rounded-lg
+        rounded-md
         p-3.5
       `}
     >
-      <ul className="space-y-2">
+      <ul className="space-y-1.5">
         {questions.map((question, index) => (
           <li
             key={index}
-            className="text-[14px] text-[var(--text-secondary)] italic"
+            className="text-[13px] text-[var(--text-secondary)] italic py-[3px]"
           >
             → {question}
           </li>

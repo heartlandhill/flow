@@ -66,7 +66,7 @@ export function Sidebar({ badgeCounts }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-2 py-1">
+      <nav className="flex-1 px-2.5 py-1">
         <ul className="space-y-0.5">
           {navItems.map((item) => {
             const active = isActive(item.href);
@@ -78,29 +78,36 @@ export function Sidebar({ badgeCounts }: SidebarProps) {
                 <Link
                   href={item.href}
                   className={`
-                    flex items-center gap-2.5 px-3 py-2 rounded-md text-[13.5px] transition-colors
-                    ${active
-                      ? 'bg-[var(--bg-selected)]'
-                      : 'hover:bg-[var(--bg-hover)]'
-                    }
+                    group flex items-center gap-2.5 px-3 py-2 rounded-md text-[13.5px] transition-all duration-150
+                    hover:bg-[var(--bg-hover)]
+                    focus:outline-none focus-visible:bg-[var(--bg-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-inset
+                    ${active ? 'bg-[var(--bg-selected)]' : ''}
                   `}
                 >
                   <Icon
                     size={20}
-                    className={
+                    className={`transition-opacity duration-150 ${
                       active
-                        ? accentClasses[item.accentVar]
-                        : 'text-[var(--text-secondary)]'
-                    }
+                        ? `${accentClasses[item.accentVar]} opacity-100`
+                        : 'text-[var(--text-secondary)] opacity-60 group-hover:opacity-90'
+                    }`}
                   />
                   <span
-                    className={active ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}
+                    className={`transition-colors duration-150 ${
+                      active
+                        ? 'text-[var(--text-primary)]'
+                        : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'
+                    }`}
                   >
                     {item.label}
                   </span>
                   {badgeCount > 0 && (
                     <span
-                      className="ml-auto min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-[var(--accent)] text-[9px] font-medium text-[var(--bg-root)] px-1.5"
+                      className={`ml-auto min-w-[20px] h-[18px] flex items-center justify-center rounded-[10px] text-[11px] font-medium px-1.5 ${
+                        active
+                          ? 'bg-[rgba(232,168,124,0.15)] text-[var(--accent)]'
+                          : 'bg-[var(--bg-surface)] text-[var(--text-secondary)]'
+                      }`}
                     >
                       {badgeCount}
                     </span>

@@ -106,20 +106,33 @@ function DateCell({ date, tasks, isToday }: DateCellProps) {
         /* Desktop: expand to fill grid cell */
         md:w-auto md:min-w-0
 
+        /* Consistent 2px border for all cells to prevent layout shift */
+        border-2
+
         /* Today styling: accent border + tinted background */
         ${isToday
-          ? "border-2 border-[var(--accent)] bg-[rgba(232,168,124,0.08)]"
-          : "border border-transparent bg-[var(--bg-surface)]"
+          ? "border-[var(--accent)] bg-[rgba(232,168,124,0.08)]"
+          : "border-transparent bg-[var(--bg-surface)]"
         }
       `}
     >
-      {/* Day name: 10px uppercase tertiary */}
-      <span className="text-[10px] font-medium uppercase text-[var(--text-tertiary)] leading-none">
+      {/* Day name: 10px uppercase, accent color for today */}
+      <span
+        className={`
+          text-[10px] font-medium uppercase leading-none
+          ${isToday ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}
+        `}
+      >
         {dayName}
       </span>
 
-      {/* Day number: 18px primary */}
-      <span className="text-[18px] font-normal text-[var(--text-primary)] leading-tight mt-1">
+      {/* Day number: 18px, accent color + bold for today */}
+      <span
+        className={`
+          text-[18px] leading-tight mt-1
+          ${isToday ? "text-[var(--accent)] font-semibold" : "text-[var(--text-primary)] font-normal"}
+        `}
+      >
         {dayNumber}
       </span>
 

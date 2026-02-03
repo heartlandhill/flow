@@ -84,11 +84,11 @@ export default async function ForecastPage() {
   );
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full view-content">
       {/* Header */}
       <header className="flex flex-col px-4 pt-6 pb-4 md:px-6 md:pt-8 md:pb-5">
         <div className="flex items-baseline gap-3">
-          <h1 className="font-display text-[26px] md:text-[28px] font-normal text-[var(--text-primary)]">
+          <h1 className="font-display text-[26px] md:text-[28px] font-medium text-[var(--text-primary)]">
             Forecast
           </h1>
           {typedTasks.length > 0 && (
@@ -129,11 +129,11 @@ export default async function ForecastPage() {
  */
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
-      <span className="text-[48px] mb-4" role="img" aria-label="Calendar">
+    <div className="flex flex-col items-center py-12 px-5 text-center">
+      <span className="text-[32px] mb-2.5" role="img" aria-label="Calendar">
         📅
       </span>
-      <p className="font-display text-lg text-[var(--text-secondary)]">
+      <p className="text-[14px] text-[var(--text-tertiary)]">
         Nothing scheduled for the next 2 weeks
       </p>
     </div>
