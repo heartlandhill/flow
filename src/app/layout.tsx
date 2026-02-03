@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { prisma } from "@/lib/db";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { MobileHeader } from "@/components/layout/MobileHeader";
@@ -12,11 +13,39 @@ export const metadata: Metadata = {
   description: "A calm, focused GTD task manager",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Fetch areas with their active projects for the task edit dropdown
+  const areasWithProjects = await prisma.area.findMany({
+    orderBy: { sort_order: "asc" },
+    select: {
+      id: true,
+      name: true,
+      color: true,
+      projects: {
+        where: { status: "ACTIVE" },
+        orderBy: { sort_order: "asc" },
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+
+  // Fetch all tags for the task edit toggle pills
+  const allTags = await prisma.tag.findMany({
+    orderBy: { sort_order: "asc" },
+    select: {
+      id: true,
+      name: true,
+      icon: true,
+    },
+  });
+
   return (
     <html lang="en">
       <head>
@@ -26,7 +55,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-[var(--bg-root)] text-[var(--text-primary)]">
-        <SelectedTaskWrapper>
+        <SelectedTaskWrapper areasWithProjects={areasWithProjects} allTags={allTags}>
           <QuickCaptureWrapper>
           {/* Mobile Header - visible below md breakpoint */}
           <div className="md:hidden">

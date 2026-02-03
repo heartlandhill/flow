@@ -5,12 +5,40 @@ import { CloseIcon } from "@/components/ui/Icons";
 import { TaskDetailContent } from "@/components/tasks/TaskDetailContent";
 import { useSelectedTask } from "@/context/SelectedTaskContext";
 
+// Simplified type for project dropdown - just need id, name
+interface ProjectForDropdown {
+  id: string;
+  name: string;
+}
+
+// Area with its projects for grouped dropdown
+interface AreaWithProjects {
+  id: string;
+  name: string;
+  color: string;
+  projects: ProjectForDropdown[];
+}
+
+// Simplified type for tag toggle pills
+interface TagForToggle {
+  id: string;
+  name: string;
+  icon: string | null;
+}
+
+interface TaskDetailSheetProps {
+  /** Areas with their projects for the project dropdown */
+  areasWithProjects?: AreaWithProjects[];
+  /** All available tags for tag toggle pills */
+  allTags?: TagForToggle[];
+}
+
 /**
  * TaskDetailSheet - Mobile wrapper for task detail using Sheet primitive.
  * Visible only on viewports below 768px (md breakpoint).
  * Slides up from bottom as a bottom sheet when a task is selected.
  */
-export function TaskDetailSheet() {
+export function TaskDetailSheet({ areasWithProjects = [], allTags = [] }: TaskDetailSheetProps) {
   const { selectedTask, clearSelectedTask } = useSelectedTask();
 
   const isOpen = selectedTask !== null;
@@ -47,6 +75,8 @@ export function TaskDetailSheet() {
             <div className="px-4 pb-6">
               <TaskDetailContent
                 task={selectedTask}
+                areasWithProjects={areasWithProjects}
+                allTags={allTags}
                 onEditClick={() => {
                   // Edit functionality will be implemented in Spec 013
                 }}

@@ -5,6 +5,34 @@ import { CloseIcon } from "@/components/ui/Icons";
 import { TaskDetailContent } from "@/components/tasks/TaskDetailContent";
 import { useSelectedTask } from "@/context/SelectedTaskContext";
 
+// Simplified type for project dropdown - just need id, name
+interface ProjectForDropdown {
+  id: string;
+  name: string;
+}
+
+// Area with its projects for grouped dropdown
+interface AreaWithProjects {
+  id: string;
+  name: string;
+  color: string;
+  projects: ProjectForDropdown[];
+}
+
+// Simplified type for tag toggle pills
+interface TagForToggle {
+  id: string;
+  name: string;
+  icon: string | null;
+}
+
+interface TaskDetailProps {
+  /** Areas with their projects for the project dropdown */
+  areasWithProjects?: AreaWithProjects[];
+  /** All available tags for tag toggle pills */
+  allTags?: TagForToggle[];
+}
+
 /**
  * TaskDetail - Desktop side panel for task detail view.
  * Visible only on viewports at 768px+ (md breakpoint).
@@ -18,7 +46,7 @@ import { useSelectedTask } from "@/context/SelectedTaskContext";
  * - Close button in top-right corner
  * - Escape key handler to close panel
  */
-export function TaskDetail() {
+export function TaskDetail({ areasWithProjects = [], allTags = [] }: TaskDetailProps) {
   const { selectedTask, clearSelectedTask } = useSelectedTask();
 
   const isOpen = selectedTask !== null;
@@ -89,6 +117,8 @@ export function TaskDetail() {
           <div className="px-4 pb-6 overflow-y-auto flex-1">
             <TaskDetailContent
               task={selectedTask}
+              areasWithProjects={areasWithProjects}
+              allTags={allTags}
               onEditClick={() => {
                 // Edit functionality will be implemented in Spec 013
               }}
