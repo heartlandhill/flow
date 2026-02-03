@@ -147,3 +147,58 @@ export async function snoozeReminder(
     return { success: false, error: "Failed to snooze reminder" };
   }
 }
+
+/**
+ * Server action to dismiss a reminder.
+ * Cancels the pg-boss job and sets status to DISMISSED.
+ *
+ * @param reminderId - The reminder ID to dismiss
+ */
+export async function dismissReminder(
+  reminderId: string
+): Promise<ActionResult<Reminder>> {
+  try {
+    // Validate reminder ID
+    if (!reminderId || typeof reminderId !== "string") {
+      return { success: false, error: "Reminder ID is required" };
+    }
+
+    // Find the reminder
+    const reminder = await prisma.reminder.findUnique({
+      where: { id: reminderId },
+    });
+
+    if (!reminder) {
+      return { success: false, error: "Reminder not found" };
+    }
+
+    // Already dismissed - return success idempotently
+    if (reminder.status === "DISMISSED") {
+      return { success: true, data: reminder };
+    }
+
+    // Cancel the pg-boss job if it exists
+    if (reminder.pgboss_job_id) {
+      await cancelReminder(reminder.pgboss_job_id);
+    }
+
+    // Update reminder status to DISMISSED
+    const updatedReminder = await prisma.reminder.update({
+      where: { id: reminderId },
+      data: {
+        status: "DISMISSED",
+        pgboss_job_id: null,
+      },
+    });
+
+    // Revalidate views that show reminders
+    revalidatePath("/today");
+    revalidatePath("/inbox");
+    revalidatePath("/forecast");
+
+    return { success: true, data: updatedReminder };
+  } catch (error) {
+    console.error("Dismiss reminder error:", error);
+    return { success: false, error: "Failed to dismiss reminder" };
+  }
+}
