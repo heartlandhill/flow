@@ -251,11 +251,14 @@ export async function deleteProject(id: string): Promise<ActionResult> {
 
     // Use transaction to orphan tasks and delete project atomically
     await prisma.$transaction(async (tx) => {
-      // Orphan all tasks belonging to this project (set project_id = null)
+      // Orphan all tasks belonging to this project and move to inbox for re-clarification
       // This preserves task history while removing the project association
       await tx.task.updateMany({
         where: { project_id: id },
-        data: { project_id: null },
+        data: {
+          project_id: null,
+          inbox: true,  // Move tasks back to inbox so they're visible for re-clarification
+        },
       });
 
       // Delete the project
