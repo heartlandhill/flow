@@ -202,3 +202,49 @@ export async function dismissReminder(
     return { success: false, error: "Failed to dismiss reminder" };
   }
 }
+
+/**
+ * Server action to delete a reminder.
+ * Cancels the pg-boss job and removes the reminder record from the database.
+ *
+ * @param reminderId - The reminder ID to delete
+ */
+export async function deleteReminder(
+  reminderId: string
+): Promise<ActionResult> {
+  try {
+    // Validate reminder ID
+    if (!reminderId || typeof reminderId !== "string") {
+      return { success: false, error: "Reminder ID is required" };
+    }
+
+    // Find the reminder
+    const reminder = await prisma.reminder.findUnique({
+      where: { id: reminderId },
+    });
+
+    if (!reminder) {
+      return { success: false, error: "Reminder not found" };
+    }
+
+    // Cancel the pg-boss job if it exists
+    if (reminder.pgboss_job_id) {
+      await cancelReminder(reminder.pgboss_job_id);
+    }
+
+    // Delete the reminder record
+    await prisma.reminder.delete({
+      where: { id: reminderId },
+    });
+
+    // Revalidate views that show reminders
+    revalidatePath("/today");
+    revalidatePath("/inbox");
+    revalidatePath("/forecast");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Delete reminder error:", error);
+    return { success: false, error: "Failed to delete reminder" };
+  }
+}
