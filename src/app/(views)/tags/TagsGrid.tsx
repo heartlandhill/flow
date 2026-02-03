@@ -3,6 +3,7 @@
 import { useState, useCallback, useTransition, useMemo } from "react";
 import { TaskRow } from "@/components/tasks/TaskRow";
 import { completeTask } from "@/actions/tasks";
+import { useSearch } from "@/context/SearchContext";
 import type { TagWithTasks, TaskWithRelations } from "@/types";
 
 interface TagsGridProps {
@@ -30,6 +31,9 @@ export function TagsGrid({ initialTags }: TagsGridProps) {
     [tags, selectedTagId]
   );
 
+  // Search context for filtering
+  const { query } = useSearch();
+
   // Sort tasks: due_date ASC (nulls last), then created_at DESC
   const sortedTasks = useMemo(() => {
     if (!selectedTag) return [];
@@ -45,6 +49,16 @@ export function TagsGrid({ initialTags }: TagsGridProps) {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
   }, [selectedTag]);
+
+  // Filter tasks based on search query
+  const filteredTasks = useMemo(() => {
+    if (!query.trim()) return sortedTasks;
+    return sortedTasks.filter((t) =>
+      t.title.toLowerCase().includes(query.toLowerCase())
+    );
+  }, [sortedTasks, query]);
+
+  const isSearchActive = query.trim().length > 0;
 
   // Handle tag card click
   const handleTagClick = useCallback((tagId: string) => {
@@ -144,9 +158,18 @@ export function TagsGrid({ initialTags }: TagsGridProps) {
                 No tasks with this tag
               </p>
             </div>
+          ) : isSearchActive && filteredTasks.length === 0 ? (
+            <div className="px-4 py-2 text-sm text-[var(--text-secondary)]">
+              No tasks matching &apos;{query}&apos;
+            </div>
           ) : (
             <div className="flex flex-col">
-              {sortedTasks.map((task: TaskWithRelations) => (
+              {isSearchActive && (
+                <div className="px-4 py-2 text-sm text-[var(--text-secondary)]">
+                  Showing results for &apos;{query}&apos;
+                </div>
+              )}
+              {filteredTasks.map((task: TaskWithRelations) => (
                 <TaskRow
                   key={task.id}
                   task={task}
