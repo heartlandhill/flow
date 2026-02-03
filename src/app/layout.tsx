@@ -65,8 +65,8 @@ export default async function RootLayout({
         />
       </head>
       <body className="bg-[var(--bg-root)] text-[var(--text-primary)]">
-        <SelectedTaskWrapper areasWithProjects={areasWithProjects} allTags={allTags}>
-          <QuickCaptureWrapper>
+        <QuickCaptureWrapper>
+          <SelectedTaskWrapper areasWithProjects={areasWithProjects} allTags={allTags}>
           <SearchProvider>
           {/* Mobile Header - visible below md breakpoint */}
           <div className="md:hidden">
@@ -107,8 +107,8 @@ export default async function RootLayout({
             <BottomNav badgeCounts={badgeCounts} />
           </div>
           </SearchProvider>
-        </QuickCaptureWrapper>
         </SelectedTaskWrapper>
+        </QuickCaptureWrapper>
       </body>
     </html>
   );
