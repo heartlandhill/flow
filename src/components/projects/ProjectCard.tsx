@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { TaskRow } from "@/components/tasks/TaskRow";
 import type { ProjectWithTasksAndCounts, TaskWithRelations, SomedayProject } from "@/types";
 
@@ -19,26 +20,15 @@ interface ProjectCardSomedayProps {
 type ProjectCardProps = ProjectCardActiveProps | ProjectCardSomedayProps;
 
 /**
- * Get tasks to display based on project type
- * - Sequential: only first incomplete task
- * - Parallel: up to 3 incomplete tasks
+ * Get tasks to display - always show up to 3 tasks
  */
 function getDisplayedTasks(
   project: ProjectWithTasksAndCounts
 ): { tasks: ProjectWithTasksAndCounts["tasks"]; moreCount: number } {
   const incompleteTasks = project.tasks;
-
-  if (project.type === "SEQUENTIAL") {
-    // Sequential: only show first task
-    const tasks = incompleteTasks.slice(0, 1);
-    const moreCount = Math.max(0, incompleteTasks.length - 1);
-    return { tasks, moreCount };
-  } else {
-    // Parallel: show up to 3 tasks
-    const tasks = incompleteTasks.slice(0, 3);
-    const moreCount = Math.max(0, incompleteTasks.length - 3);
-    return { tasks, moreCount };
-  }
+  const tasks = incompleteTasks.slice(0, 3);
+  const moreCount = Math.max(0, incompleteTasks.length - 3);
+  return { tasks, moreCount };
 }
 
 /**
@@ -140,11 +130,12 @@ function ActiveCard({
     >
       {/* Header: Project name + remaining count */}
       <div className="flex items-center justify-between gap-2 mb-2">
-        <h3
-          className="text-[15px] md:text-[14px] font-medium text-[var(--text-primary)] truncate"
+        <Link
+          href={`/projects/${project.id}`}
+          className="text-[15px] md:text-[14px] font-medium text-[var(--text-primary)] truncate hover:underline"
         >
           {project.name}
-        </h3>
+        </Link>
 
         {/* Remaining count badge */}
         <span
@@ -183,9 +174,12 @@ function ActiveCard({
       {/* "+N more" link */}
       {moreCount > 0 && (
         <div className="mt-1 pl-9">
-          <span className="text-[12px] text-[var(--text-secondary)] cursor-pointer hover:text-[var(--text-primary)] transition-colors">
+          <Link
+            href={`/projects/${project.id}`}
+            className="text-[12px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          >
             +{moreCount} more
-          </span>
+          </Link>
         </div>
       )}
     </div>
@@ -212,11 +206,12 @@ function SomedayCard({ project }: { project: SomedayProject }) {
       `}
     >
       {/* Project name */}
-      <h3
-        className="text-[14px] md:text-[13px] font-medium text-[var(--text-primary)] truncate flex-1"
+      <Link
+        href={`/projects/${project.id}`}
+        className="text-[14px] md:text-[13px] font-medium text-[var(--text-primary)] truncate flex-1 hover:underline"
       >
         {project.name}
-      </h3>
+      </Link>
 
       {/* Area label pill */}
       <span
