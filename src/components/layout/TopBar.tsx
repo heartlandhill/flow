@@ -7,7 +7,7 @@ export function TopBar() {
   const { query, setQuery, clearQuery } = useSearch();
 
   return (
-    <header className="h-14 bg-transparent border-b border-[var(--border)] flex items-center justify-between px-6">
+    <header className="h-[52px] bg-transparent border-b border-[var(--border)] flex items-center justify-between px-6">
       {/* Search Input */}
       <div className="relative flex-1 max-w-md">
         <SearchIcon
