@@ -189,6 +189,7 @@ export function ReviewCard({
         </h3>
         <NextActionsList
           tasks={project.tasks}
+          project={project}
           onTaskComplete={handleTaskComplete}
         />
       </div>
@@ -262,9 +263,11 @@ function CompletionState() {
  */
 function NextActionsList({
   tasks,
+  project,
   onTaskComplete,
 }: {
   tasks: ReviewableProject["tasks"];
+  project: ReviewableProject;
   onTaskComplete: (taskId: string) => void;
 }) {
   // Filter to only incomplete tasks
@@ -283,9 +286,10 @@ function NextActionsList({
       project: null,
       reminders: [],
     },
-    // Context task preserves full data for TaskDetailPanel
+    // Context task includes project info for TaskDetailPanel
     contextTask: {
       ...task,
+      project: { ...project, area: project.area },
       reminders: [],
     },
   }));
