@@ -107,7 +107,7 @@ export default async function ProjectsPage() {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 px-4 md:px-6 pb-24 md:pb-6 overflow-y-auto">
+      <main className="flex-1 px-4 md:px-6 pb-24 md:pb-6 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {!hasAnyContent ? (
           <EmptyState />
         ) : (
