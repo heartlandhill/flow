@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { ProjectDetailList } from "./ProjectDetailList";
+import { ProjectDetailHeader } from "./ProjectDetailHeader";
 import type { TaskWithRelations } from "@/types";
 
 interface ProjectDetailPageProps {
@@ -65,6 +66,16 @@ export default async function ProjectDetailPage({
     },
   });
 
+  // Fetch all areas for the edit modal
+  const areas = await prisma.area.findMany({
+    orderBy: { sort_order: "asc" },
+    select: {
+      id: true,
+      name: true,
+      color: true,
+    },
+  });
+
   // Calculate progress
   const totalTasks = project._count.tasks;
   const incompleteTasks = project.tasks.length;
@@ -103,26 +114,21 @@ export default async function ProjectDetailPage({
           Projects
         </Link>
 
-        {/* Project name and area badge */}
-        <div className="flex items-center gap-3 mb-3">
-          <h1 className="font-display text-[26px] md:text-[28px] font-medium text-[var(--text-primary)]">
-            {project.name}
-          </h1>
-
-          {/* Area badge */}
-          <span
-            className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium"
-            style={{
-              backgroundColor: `${areaColor}20`,
-              color: areaColor,
+        {/* Project name, area badge, and edit button */}
+        <div className="mb-3">
+          <ProjectDetailHeader
+            project={{
+              id: project.id,
+              name: project.name,
+              notes: project.notes,
+              status: project.status,
+              type: project.type,
+              area_id: project.area_id,
+              review_interval_days: project.review_interval_days,
             }}
-          >
-            <span
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ backgroundColor: areaColor }}
-            />
-            {project.area.name}
-          </span>
+            area={project.area}
+            areas={areas}
+          />
         </div>
 
         {/* Progress bar */}

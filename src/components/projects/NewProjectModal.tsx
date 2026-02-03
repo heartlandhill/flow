@@ -382,7 +382,7 @@ export function NewProjectModal({
                   rounded-[4px]
                   shadow-sm
                   transition-all duration-200 ease-out
-                  ${projectType === "SEQUENTIAL" ? "left-[calc(50%+2px)]" : "left-[3px]"}
+                  ${projectType === "SEQUENTIAL" ? "left-[3px]" : "left-[calc(50%+2px)]"}
                 `}
               />
               {/* Labels */}
@@ -392,20 +392,20 @@ export function NewProjectModal({
                     flex-1 flex items-center justify-center
                     text-[13px] font-medium
                     transition-colors duration-150
-                    ${projectType === "PARALLEL" ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}
+                    ${projectType === "SEQUENTIAL" ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}
                   `}
                 >
-                  Parallel
+                  Sequential
                 </span>
                 <span
                   className={`
                     flex-1 flex items-center justify-center
                     text-[13px] font-medium
                     transition-colors duration-150
-                    ${projectType === "SEQUENTIAL" ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}
+                    ${projectType === "PARALLEL" ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}
                   `}
                 >
-                  Sequential
+                  Parallel
                 </span>
               </span>
             </button>
