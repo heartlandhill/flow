@@ -38,7 +38,7 @@ function getDotColor(task: TaskWithRelations): string {
 export function ForecastStrip({ dates, tasksByDate }: ForecastStripProps) {
   return (
     <div
-      className="flex gap-2 overflow-x-auto [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-7 md:gap-2 md:overflow-visible"
+      className="flex gap-2 overflow-x-auto [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden lg:grid lg:grid-cols-7 lg:gap-2 lg:overflow-visible"
     >
       {dates.map((date) => {
         const dateKey = getDateKey(date);
@@ -90,7 +90,7 @@ function DateCell({ date, tasks, isToday }: DateCellProps) {
         py-3 rounded-lg
         transition-colors duration-150
         w-[60px] min-w-[60px] shrink-0
-        md:w-auto md:min-w-0 md:shrink
+        lg:w-auto lg:min-w-0 lg:shrink
         border-2
         ${isToday
           ? "border-[var(--accent)] bg-[rgba(232,168,124,0.08)]"
