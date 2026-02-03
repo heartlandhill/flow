@@ -309,6 +309,15 @@ function NextActionsList({
   );
   const [isPending, startTransition] = useTransition();
 
+  // Sync localTasks when project changes (e.g., advancing to next project in review)
+  useEffect(() => {
+    setLocalTasks(
+      [...tasks]
+        .filter((task) => !task.completed)
+        .sort((a, b) => a.sort_order - b.sort_order)
+    );
+  }, [project.id, tasks]);
+
   // Sensors for drag-and-drop
   const sensors = useSensors(
     useSensor(PointerSensor, {
