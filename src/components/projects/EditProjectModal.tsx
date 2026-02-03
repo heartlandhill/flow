@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { ChevronIcon } from "@/components/ui/Icons";
-import { updateProject } from "@/actions/projects";
+import { updateProject, deleteProject } from "@/actions/projects";
 import type { ProjectStatus, ProjectType } from "@/types";
 
 /**
@@ -36,6 +36,7 @@ interface EditProjectModalProps {
   project: ProjectData;
   areas: Area[];
   onUpdated?: () => void;
+  onDeleted?: () => void;
 }
 
 /**
@@ -62,6 +63,7 @@ export function EditProjectModal({
   project,
   areas,
   onUpdated,
+  onDeleted,
 }: EditProjectModalProps) {
   // Form state - pre-filled with current project values
   const [name, setName] = useState(project.name);
@@ -74,6 +76,10 @@ export function EditProjectModal({
   const [notes, setNotes] = useState(project.notes || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Delete confirmation state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Custom dropdown state for area selection
   const [isAreaDropdownOpen, setIsAreaDropdownOpen] = useState(false);
@@ -104,11 +110,12 @@ export function EditProjectModal({
     }
   }, [isOpen, project]);
 
-  // Clear dropdown state when modal closes
+  // Clear dropdown and delete confirmation state when modal closes
   useEffect(() => {
     if (!isOpen) {
       setIsAreaDropdownOpen(false);
       setIsIntervalDropdownOpen(false);
+      setShowDeleteConfirm(false);
     }
   }, [isOpen]);
 
@@ -230,6 +237,52 @@ export function EditProjectModal({
     setReviewIntervalDays(value);
     setIsIntervalDropdownOpen(false);
   }, []);
+
+  // Handle delete button click - show confirmation dialog
+  const handleDeleteClick = useCallback(() => {
+    setShowDeleteConfirm(true);
+  }, []);
+
+  // Handle cancel delete - close confirmation dialog
+  const handleCancelDelete = useCallback(() => {
+    setShowDeleteConfirm(false);
+  }, []);
+
+  // Handle confirm delete - calls deleteProject and handles success/failure
+  const handleConfirmDelete = useCallback(async () => {
+    if (isDeleting) return;
+
+    setIsDeleting(true);
+    setError(null);
+
+    try {
+      const result = await deleteProject(project.id);
+
+      if (result.success) {
+        // Close modal and notify parent on success
+        onClose();
+        onDeleted?.();
+      } else {
+        setError(result.error || "Failed to delete project");
+        setShowDeleteConfirm(false);
+      }
+    } catch {
+      setError("Failed to delete project");
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [project.id, isDeleting, onClose, onDeleted]);
+
+  // Handle overlay click for delete confirmation dialog
+  const handleDeleteOverlayClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (e.target === e.currentTarget) {
+        setShowDeleteConfirm(false);
+      }
+    },
+    []
+  );
 
   // Get currently selected area for display
   const selectedArea = areas.find((area) => area.id === areaId);
@@ -671,12 +724,24 @@ export function EditProjectModal({
 
         {/* Footer */}
         <div className="flex items-center justify-between px-4 pb-4 pt-2">
-          {/* Hint text */}
-          <span className="text-[12px] text-[var(--text-tertiary)]">
-            Press <kbd className="font-medium">Enter</kbd> to save
-          </span>
+          {/* Delete button on the left */}
+          <button
+            type="button"
+            onClick={handleDeleteClick}
+            disabled={isSubmitting || isDeleting}
+            className={`
+              text-[14px] font-medium
+              text-[#E88B8B]
+              transition-all duration-150
+              hover:opacity-80
+              focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E88B8B] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
+              disabled:opacity-50 disabled:cursor-not-allowed
+            `}
+          >
+            Delete Project
+          </button>
 
-          {/* Save button */}
+          {/* Save button on the right */}
           <button
             type="button"
             onClick={handleSubmit}
@@ -698,6 +763,95 @@ export function EditProjectModal({
           </button>
         </div>
       </div>
+
+      {/* Delete confirmation dialog */}
+      {showDeleteConfirm && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-confirm-title"
+          onClick={handleDeleteOverlayClick}
+          className={`
+            fixed inset-0 z-50
+            flex items-center justify-center
+            bg-black/60 backdrop-blur-sm
+            animate-in fade-in duration-150
+          `}
+        >
+          {/* Dialog Card */}
+          <div
+            className={`
+              /* Width */
+              w-[calc(100%-32px)] max-w-[320px]
+
+              /* Styling */
+              bg-[var(--bg-card)]
+              border border-[var(--border)]
+              rounded-[14px]
+              shadow-xl
+              p-5
+
+              /* Animation */
+              animate-in fade-in slide-in-from-bottom-2 zoom-in-[0.97]
+              duration-200
+            `}
+          >
+            {/* Title */}
+            <h3
+              id="delete-confirm-title"
+              className="text-[16px] font-medium text-[var(--text-primary)] text-center mb-2"
+            >
+              Delete this project?
+            </h3>
+
+            {/* Description */}
+            <p className="text-[14px] text-[var(--text-secondary)] text-center mb-4">
+              Tasks will be moved to inbox.
+            </p>
+
+            {/* Action buttons */}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleCancelDelete}
+                disabled={isDeleting}
+                className={`
+                  flex-1 py-2.5
+                  text-[14px] font-medium
+                  text-[var(--text-secondary)]
+                  bg-[var(--bg-surface)]
+                  border border-[var(--border)]
+                  rounded-md
+                  transition-all duration-150
+                  hover:opacity-80
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                `}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                className={`
+                  flex-1 py-2.5
+                  text-[14px] font-medium
+                  text-white
+                  bg-[#E88B8B]
+                  rounded-md
+                  transition-all duration-150
+                  hover:opacity-90
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E88B8B] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                `}
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
