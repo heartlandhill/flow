@@ -9,13 +9,18 @@ import {
   ProjectsIcon,
   TagsIcon,
 } from '@/components/ui/Icons';
+import type { BadgeCounts } from '@/lib/queries/badge-counts';
+
+interface BottomNavProps {
+  badgeCounts: BadgeCounts;
+}
 
 interface NavItem {
   href: string;
   label: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
   accentVar: string;
-  badge?: number;
+  badgeKey?: keyof BadgeCounts;
 }
 
 // Static class mapping to ensure Tailwind JIT generates these classes
@@ -29,14 +34,14 @@ const accentClasses: Record<string, string> = {
 };
 
 const navItems: NavItem[] = [
-  { href: '/inbox', label: 'Inbox', icon: InboxIcon, accentVar: '--view-inbox', badge: 4 },
-  { href: '/today', label: 'Today', icon: TodayIcon, accentVar: '--view-today', badge: 2 },
+  { href: '/inbox', label: 'Inbox', icon: InboxIcon, accentVar: '--view-inbox', badgeKey: 'inbox' },
+  { href: '/today', label: 'Today', icon: TodayIcon, accentVar: '--view-today', badgeKey: 'today' },
   { href: '/forecast', label: 'Forecast', icon: ForecastIcon, accentVar: '--view-forecast' },
   { href: '/projects', label: 'Projects', icon: ProjectsIcon, accentVar: '--view-projects' },
   { href: '/tags', label: 'Tags', icon: TagsIcon, accentVar: '--view-tags' },
 ];
 
-export function BottomNav() {
+export function BottomNav({ badgeCounts }: BottomNavProps) {
   const pathname = usePathname();
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
 
@@ -49,6 +54,7 @@ export function BottomNav() {
         {navItems.map((item) => {
           const active = isActive(item.href);
           const Icon = item.icon;
+          const badgeCount = item.badgeKey ? badgeCounts[item.badgeKey] : 0;
 
           return (
             <li key={item.href} className="flex-1">
@@ -65,9 +71,9 @@ export function BottomNav() {
                         : 'text-[var(--text-secondary)]'
                     }
                   />
-                  {item.badge !== undefined && (
+                  {badgeCount > 0 && (
                     <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-[var(--accent)] text-[9px] font-medium text-[var(--bg-root)] px-1">
-                      {item.badge}
+                      {badgeCount}
                     </span>
                   )}
                 </div>
