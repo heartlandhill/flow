@@ -173,17 +173,17 @@ export function TaskRow({ task, onComplete, onSelect, contextTask }: TaskRowProp
             {/* Project pill */}
             {task.project && (
               <span
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[11px] font-medium"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[11px] font-medium whitespace-nowrap max-w-[160px]"
                 style={{
                   backgroundColor: `${areaColor}20`,
                   color: areaColor,
                 }}
               >
                 <span
-                  className="w-1.5 h-1.5 rounded-full"
+                  className="w-1.5 h-1.5 rounded-full shrink-0"
                   style={{ backgroundColor: areaColor }}
                 />
-                {task.project.name}
+                <span className="truncate">{task.project.name}</span>
               </span>
             )}
 
