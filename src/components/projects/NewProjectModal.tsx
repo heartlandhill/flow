@@ -354,53 +354,61 @@ export function NewProjectModal({
             )}
           </div>
 
-          {/* Type Toggle - Parallel/Sequential pills */}
+          {/* Type Toggle - Single switch with labels */}
           <div>
             <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
               Type
             </label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setProjectType("PARALLEL")}
-                disabled={isSubmitting}
+            <button
+              type="button"
+              onClick={() => setProjectType(projectType === "SEQUENTIAL" ? "PARALLEL" : "SEQUENTIAL")}
+              disabled={isSubmitting}
+              className={`
+                relative w-full h-[38px]
+                bg-[var(--bg-surface)]
+                border border-[var(--border)]
+                rounded-[6px]
+                transition-colors duration-150
+                disabled:opacity-60
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]
+              `}
+            >
+              {/* Sliding indicator */}
+              <span
                 className={`
-                  flex-1 px-3 py-2
-                  text-[14px] font-medium
-                  rounded-[6px]
-                  border
-                  transition-all duration-150
-                  disabled:opacity-60
-                  ${
-                    projectType === "PARALLEL"
-                      ? "bg-[rgba(232,168,124,0.12)] border-[var(--accent)] text-[var(--accent)]"
-                      : "bg-[var(--bg-surface)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]"
-                  }
+                  absolute top-[3px] bottom-[3px] w-[calc(50%-4px)]
+                  bg-[var(--bg-card)]
+                  border border-[var(--border)]
+                  rounded-[4px]
+                  shadow-sm
+                  transition-all duration-200 ease-out
+                  ${projectType === "SEQUENTIAL" ? "left-[calc(50%+2px)]" : "left-[3px]"}
                 `}
-              >
-                Parallel
-              </button>
-              <button
-                type="button"
-                onClick={() => setProjectType("SEQUENTIAL")}
-                disabled={isSubmitting}
-                className={`
-                  flex-1 px-3 py-2
-                  text-[14px] font-medium
-                  rounded-[6px]
-                  border
-                  transition-all duration-150
-                  disabled:opacity-60
-                  ${
-                    projectType === "SEQUENTIAL"
-                      ? "bg-[rgba(232,168,124,0.12)] border-[var(--accent)] text-[var(--accent)]"
-                      : "bg-[var(--bg-surface)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]"
-                  }
-                `}
-              >
-                Sequential
-              </button>
-            </div>
+              />
+              {/* Labels */}
+              <span className="relative z-10 flex h-full">
+                <span
+                  className={`
+                    flex-1 flex items-center justify-center
+                    text-[13px] font-medium
+                    transition-colors duration-150
+                    ${projectType === "PARALLEL" ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}
+                  `}
+                >
+                  Parallel
+                </span>
+                <span
+                  className={`
+                    flex-1 flex items-center justify-center
+                    text-[13px] font-medium
+                    transition-colors duration-150
+                    ${projectType === "SEQUENTIAL" ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}
+                  `}
+                >
+                  Sequential
+                </span>
+              </span>
+            </button>
           </div>
         </div>
 
