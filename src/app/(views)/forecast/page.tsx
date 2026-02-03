@@ -129,11 +129,11 @@ export default async function ForecastPage() {
  */
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
-      <span className="text-[48px] mb-4" role="img" aria-label="Calendar">
+    <div className="flex flex-col items-center py-12 px-5 text-center">
+      <span className="text-[32px] mb-2.5" role="img" aria-label="Calendar">
         📅
       </span>
-      <p className="font-display text-lg text-[var(--text-secondary)]">
+      <p className="text-[14px] text-[var(--text-tertiary)]">
         Nothing scheduled for the next 2 weeks
       </p>
     </div>
