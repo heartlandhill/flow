@@ -7,6 +7,7 @@ import { MobileHeader } from "@/components/layout/MobileHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { QuickCaptureWrapper } from "@/components/layout/QuickCaptureWrapper";
 import { SelectedTaskWrapper } from "@/components/layout/SelectedTaskWrapper";
+import { SearchProvider } from "@/context/SearchContext";
 
 export const metadata: Metadata = {
   title: "Flow GTD",
@@ -57,6 +58,7 @@ export default async function RootLayout({
       <body className="bg-[var(--bg-root)] text-[var(--text-primary)]">
         <SelectedTaskWrapper areasWithProjects={areasWithProjects} allTags={allTags}>
           <QuickCaptureWrapper>
+          <SearchProvider>
           {/* Mobile Header - visible below md breakpoint */}
           <div className="md:hidden">
             <MobileHeader />
@@ -89,6 +91,7 @@ export default async function RootLayout({
             {/* Bottom Navigation */}
             <BottomNav />
           </div>
+          </SearchProvider>
         </QuickCaptureWrapper>
         </SelectedTaskWrapper>
       </body>
