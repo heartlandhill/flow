@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useTransition, useMemo, useRef } from "react";
+import { useState, useCallback, useTransition, useMemo, useRef, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -42,6 +42,12 @@ export function ProjectDetailList({
 }: ProjectDetailListProps) {
   // Local state for optimistic updates
   const [tasks, setTasks] = useState<TaskWithRelations[]>(initialTasks);
+
+  // Sync local state when server data changes (e.g., after revalidatePath)
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
+
   // Track tasks being completed (for preventing double-clicks)
   const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
   // React transition for non-blocking server action calls
