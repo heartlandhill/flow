@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { prisma } from "@/lib/db";
+import { getBadgeCounts } from "@/lib/queries/badge-counts";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { MobileHeader } from "@/components/layout/MobileHeader";
@@ -46,6 +47,9 @@ export default async function RootLayout({
     },
   });
 
+  // Fetch badge counts for navigation
+  const badgeCounts = await getBadgeCounts();
+
   return (
     <html lang="en">
       <head>
@@ -65,7 +69,7 @@ export default async function RootLayout({
           {/* Desktop Layout - visible at md breakpoint and above */}
           <div className="hidden md:flex h-screen">
             {/* Sidebar */}
-            <Sidebar />
+            <Sidebar badgeCounts={badgeCounts} />
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-w-0">
@@ -87,7 +91,7 @@ export default async function RootLayout({
             </main>
 
             {/* Bottom Navigation */}
-            <BottomNav />
+            <BottomNav badgeCounts={badgeCounts} />
           </div>
         </QuickCaptureWrapper>
         </SelectedTaskWrapper>

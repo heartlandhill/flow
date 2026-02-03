@@ -217,6 +217,8 @@ export async function markProjectReviewed(
 
     // Revalidate the review view
     revalidatePath("/review");
+    // Revalidate layout to update navigation badges
+    revalidatePath("/", "layout");
 
     return { success: true };
   } catch (error) {
