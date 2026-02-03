@@ -14,6 +14,7 @@ interface SelectedTaskContextValue {
   selectedTask: TaskWithRelations | null;
   selectTask: (task: TaskWithRelations) => void;
   clearSelectedTask: () => void;
+  updateSelectedTask: (task: TaskWithRelations) => void;
 }
 
 const SelectedTaskContext = createContext<SelectedTaskContextValue | null>(null);
@@ -33,9 +34,13 @@ export function SelectedTaskProvider({ children }: SelectedTaskProviderProps) {
     setSelectedTask(null);
   }, []);
 
+  const updateSelectedTask = useCallback((task: TaskWithRelations) => {
+    setSelectedTask(task);
+  }, []);
+
   return createElement(
     SelectedTaskContext.Provider,
-    { value: { selectedTask, selectTask, clearSelectedTask } },
+    { value: { selectedTask, selectTask, clearSelectedTask, updateSelectedTask } },
     children
   );
 }
