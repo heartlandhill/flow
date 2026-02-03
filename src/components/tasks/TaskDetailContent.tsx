@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { ForecastIcon, CloseIcon, FolderPlusIcon } from "@/components/ui/Icons";
 import { updateTask, deleteTask } from "@/actions/tasks";
 import { useSelectedTask } from "@/context/SelectedTaskContext";
@@ -161,6 +162,7 @@ function getAreaColor(areaColor: string | null | undefined): string {
  */
 export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], allTags = [] }: TaskDetailContentProps) {
   const { clearSelectedTask, updateSelectedTask } = useSelectedTask();
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
@@ -901,9 +903,10 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
         defaultName={task.title}
         taskIdToConvert={task.id}
         headerTitle="Convert to Project"
-        onCreated={() => {
-          // Task no longer exists after conversion - close the detail panel
+        onCreated={(projectId) => {
+          // Task no longer exists after conversion - close the detail panel and navigate to new project
           clearSelectedTask();
+          router.push(`/projects/${projectId}`);
         }}
       />
     </div>
