@@ -4,10 +4,12 @@ import { useState, useCallback, useTransition, useMemo } from "react";
 import { TaskRow } from "@/components/tasks/TaskRow";
 import { completeTask } from "@/actions/tasks";
 import { useSearch } from "@/context/SearchContext";
-import type { TaskWithRelations } from "@/types";
+import { getFirstIncompleteTaskId } from "@/lib/task-utils";
+import type { TaskWithRelations, ProjectType } from "@/types";
 
 interface ProjectDetailListProps {
   initialTasks: TaskWithRelations[];
+  projectType: ProjectType;
 }
 
 /**
@@ -15,7 +17,7 @@ interface ProjectDetailListProps {
  * Manages optimistic UI updates for task completion and search filtering.
  * Follows the same pattern as InboxList and TodayList.
  */
-export function ProjectDetailList({ initialTasks }: ProjectDetailListProps) {
+export function ProjectDetailList({ initialTasks, projectType }: ProjectDetailListProps) {
   // Local state for optimistic updates
   const [tasks, setTasks] = useState<TaskWithRelations[]>(initialTasks);
   // Track tasks being completed (for preventing double-clicks)
@@ -34,6 +36,25 @@ export function ProjectDetailList({ initialTasks }: ProjectDetailListProps) {
   }, [tasks, query]);
 
   const isSearchActive = query.trim().length > 0;
+
+  // Determine first available task for SEQUENTIAL projects
+  const firstIncompleteId = useMemo(() => {
+    if (projectType !== "SEQUENTIAL") return null;
+    return getFirstIncompleteTaskId(tasks);
+  }, [tasks, projectType]);
+
+  // Check if a task is available (actionable now)
+  const isTaskAvailable = useCallback(
+    (task: TaskWithRelations): boolean => {
+      // Completed tasks are not available
+      if (task.completed) return false;
+      // PARALLEL projects: all incomplete tasks are available
+      if (projectType === "PARALLEL") return true;
+      // SEQUENTIAL projects: only first incomplete task is available
+      return task.id === firstIncompleteId;
+    },
+    [projectType, firstIncompleteId]
+  );
 
   const handleComplete = useCallback(
     (taskId: string) => {
@@ -104,16 +125,28 @@ export function ProjectDetailList({ initialTasks }: ProjectDetailListProps) {
           Showing results for &apos;{query}&apos;
         </div>
       )}
-      {filteredTasks.map((task) => (
-        <TaskRow
-          key={task.id}
-          // Hide project pill since we're already viewing this project
-          task={{ ...task, project: null }}
-          // Pass full task data to context for TaskDetailPanel
-          contextTask={task}
-          onComplete={handleComplete}
-        />
-      ))}
+      {filteredTasks.map((task) => {
+        const available = isTaskAvailable(task);
+        return (
+          <div
+            key={task.id}
+            className={`relative ${!available ? "opacity-50" : ""}`}
+          >
+            <TaskRow
+              // Hide project pill since we're already viewing this project
+              task={{ ...task, project: null }}
+              // Pass full task data to context for TaskDetailPanel
+              contextTask={task}
+              onComplete={handleComplete}
+            />
+            {!available && (
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--text-tertiary)] italic">
+                (waiting)
+              </span>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

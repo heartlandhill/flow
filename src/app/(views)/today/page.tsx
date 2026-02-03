@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getToday, formatDate } from "@/lib/utils";
+import { filterAvailableTasks } from "@/lib/task-utils";
 import { TodayList } from "./TodayList";
 import type { TaskWithRelations } from "@/types";
 
@@ -45,6 +46,9 @@ export default async function TodayPage() {
   // Cast to TaskWithRelations type
   const typedTasks = tasks as TaskWithRelations[];
 
+  // Filter to only available tasks (sequential projects: first incomplete only)
+  const availableTasks = filterAvailableTasks(typedTasks);
+
   return (
     <div className="flex flex-col h-full view-content">
       {/* Header */}
@@ -53,9 +57,9 @@ export default async function TodayPage() {
           <h1 className="font-display text-[26px] md:text-[28px] font-medium text-[var(--text-primary)]">
             Today
           </h1>
-          {typedTasks.length > 0 && (
+          {availableTasks.length > 0 && (
             <span className="text-sm text-[var(--text-tertiary)]">
-              {typedTasks.length}
+              {availableTasks.length}
             </span>
           )}
         </div>
@@ -66,10 +70,10 @@ export default async function TodayPage() {
 
       {/* Task list or empty state */}
       <main className="flex-1 px-2 md:px-4 pb-24 md:pb-6">
-        {typedTasks.length === 0 ? (
+        {availableTasks.length === 0 ? (
           <EmptyState />
         ) : (
-          <TodayList initialTasks={typedTasks} />
+          <TodayList initialTasks={availableTasks} />
         )}
       </main>
     </div>

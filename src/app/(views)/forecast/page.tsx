@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getToday, getDateRange } from "@/lib/utils";
+import { filterAvailableTasks } from "@/lib/task-utils";
 import { ForecastStrip } from "@/components/forecast/ForecastStrip";
 import { ForecastList } from "@/components/forecast/ForecastList";
 import type { TaskWithRelations } from "@/types";
@@ -61,9 +62,12 @@ export default async function ForecastPage() {
   // Cast to TaskWithRelations type
   const typedTasks = tasks as TaskWithRelations[];
 
+  // Filter to only available tasks (sequential projects: first incomplete only)
+  const availableTasks = filterAvailableTasks(typedTasks);
+
   // Group tasks by date key (YYYY-MM-DD)
   const tasksByDate = new Map<string, TaskWithRelations[]>();
-  for (const task of typedTasks) {
+  for (const task of availableTasks) {
     if (task.due_date) {
       const dateKey = getDateKey(task.due_date);
       const existing = tasksByDate.get(dateKey) || [];
@@ -91,9 +95,9 @@ export default async function ForecastPage() {
           <h1 className="font-display text-[26px] md:text-[28px] font-medium text-[var(--text-primary)]">
             Forecast
           </h1>
-          {typedTasks.length > 0 && (
+          {availableTasks.length > 0 && (
             <span className="text-sm text-[var(--text-tertiary)]">
-              {typedTasks.length}
+              {availableTasks.length}
             </span>
           )}
         </div>
@@ -109,11 +113,11 @@ export default async function ForecastPage() {
 
       {/* Task list or empty state */}
       <main className="flex-1 px-2 md:px-4 pb-24 md:pb-6 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {typedTasks.length === 0 ? (
+        {availableTasks.length === 0 ? (
           <EmptyState />
         ) : (
           <ForecastList
-            initialTasks={typedTasks}
+            initialTasks={availableTasks}
             tasksByDate={tasksByDateObj}
             daysWithTasks={daysWithTasks}
           />

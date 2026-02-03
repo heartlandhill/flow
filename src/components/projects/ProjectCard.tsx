@@ -20,14 +20,17 @@ interface ProjectCardSomedayProps {
 type ProjectCardProps = ProjectCardActiveProps | ProjectCardSomedayProps;
 
 /**
- * Get tasks to display - always show up to 3 tasks
+ * Get tasks to display based on project type
+ * - Sequential projects: show 1 task (the next action)
+ * - Parallel projects: show up to 3 tasks
  */
 function getDisplayedTasks(
   project: ProjectWithTasksAndCounts
 ): { tasks: ProjectWithTasksAndCounts["tasks"]; moreCount: number } {
   const incompleteTasks = project.tasks;
-  const tasks = incompleteTasks.slice(0, 3);
-  const moreCount = Math.max(0, incompleteTasks.length - 3);
+  const maxTasks = project.type === "SEQUENTIAL" ? 1 : 3;
+  const tasks = incompleteTasks.slice(0, maxTasks);
+  const moreCount = Math.max(0, incompleteTasks.length - maxTasks);
   return { tasks, moreCount };
 }
 
@@ -128,14 +131,21 @@ function ActiveCard({
         p-3.5 md:p-4
       `}
     >
-      {/* Header: Project name + remaining count */}
+      {/* Header: Project name + sequential label + remaining count */}
       <div className="flex items-center justify-between gap-2 mb-2">
-        <Link
-          href={`/projects/${project.id}`}
-          className="text-[15px] md:text-[14px] font-medium text-[var(--text-primary)] truncate hover:underline"
-        >
-          {project.name}
-        </Link>
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <Link
+            href={`/projects/${project.id}`}
+            className="text-[15px] md:text-[14px] font-medium text-[var(--text-primary)] truncate hover:underline"
+          >
+            {project.name}
+          </Link>
+          {project.type === "SEQUENTIAL" && (
+            <span className="flex-shrink-0 text-[10px] font-medium text-[var(--text-muted)] uppercase tracking-wide">
+              Sequential
+            </span>
+          )}
+        </div>
 
         {/* Remaining count badge */}
         <span

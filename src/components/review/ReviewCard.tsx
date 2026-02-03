@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useTransition } from "react";
 import { TaskRow } from "@/components/tasks/TaskRow";
+import { getFirstIncompleteTaskId } from "@/lib/task-utils";
 import type { ReviewableProject, ReviewProjectStats, ActionResult, TaskWithRelations } from "@/types";
 
 interface ProjectWithStats {
@@ -257,7 +258,9 @@ function CompletionState() {
 }
 
 /**
- * Next Actions list - shows all incomplete tasks for the project.
+ * Next Actions list - shows available tasks for the project based on type.
+ * - SEQUENTIAL projects: only the first incomplete task (by sort_order)
+ * - PARALLEL projects: all incomplete tasks
  * Uses TaskRow component for consistent task display.
  */
 function NextActionsList({
@@ -272,13 +275,26 @@ function NextActionsList({
   // Filter to only incomplete tasks
   const incompleteTasks = tasks.filter((task) => !task.completed);
 
+  // Apply project type filtering
+  // SEQUENTIAL: only first incomplete task (by sort_order)
+  // PARALLEL: all incomplete tasks
+  const availableTasks =
+    project.type === "SEQUENTIAL"
+      ? (() => {
+          const firstIncompleteId = getFirstIncompleteTaskId(incompleteTasks);
+          return firstIncompleteId
+            ? incompleteTasks.filter((task) => task.id === firstIncompleteId)
+            : [];
+        })()
+      : incompleteTasks;
+
   // Convert TaskWithTags to TaskWithRelations for TaskRow
   // Pass project: null for display since we're already viewing the project,
   // but keep full task data as contextTask for TaskDetailPanel
   const tasksForDisplay: Array<{
     displayTask: TaskWithRelations;
     contextTask: TaskWithRelations;
-  }> = incompleteTasks.map((task) => ({
+  }> = availableTasks.map((task) => ({
     // Display task has project: null to hide redundant project pill
     displayTask: {
       ...task,
