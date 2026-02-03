@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { CloseIcon } from "@/components/ui/Icons";
 import { createTaskInProject } from "@/actions/tasks";
+import { useOverlay } from "@/context/OverlayContext";
 
 /**
  * Tag type for the modal props (minimal - just what we need for display)
@@ -43,6 +44,8 @@ export function NewTaskModal({
   allTags,
   onCreated,
 }: NewTaskModalProps) {
+  const { registerOverlay, unregisterOverlay } = useOverlay();
+
   // Form state
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -54,6 +57,14 @@ export function NewTaskModal({
 
   const titleInputRef = useRef<HTMLInputElement>(null);
   const notesTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Register overlay when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      registerOverlay('new-task-modal');
+      return () => unregisterOverlay('new-task-modal');
+    }
+  }, [isOpen, registerOverlay, unregisterOverlay]);
 
   // Autofocus title input when modal opens
   useEffect(() => {
