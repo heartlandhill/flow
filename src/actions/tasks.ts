@@ -40,10 +40,18 @@ export async function createTask(title: string): Promise<ActionResult<Task>> {
  * Server action to create a new task directly within a project.
  * Sets inbox = false and project_id to the specified project.
  * Validates that the project exists before creating the task.
+ * Accepts optional fields: due_date, defer_date, notes, and tagIds.
+ * Uses transaction when tagIds are provided to create task and tags atomically.
  */
 export async function createTaskInProject(
   title: string,
-  projectId: string
+  projectId: string,
+  options?: {
+    due_date?: Date | null;
+    defer_date?: Date | null;
+    notes?: string | null;
+    tagIds?: string[];
+  }
 ): Promise<ActionResult<Task>> {
   try {
     // Validate title input
@@ -65,19 +73,53 @@ export async function createTaskInProject(
       return { success: false, error: "Project not found" };
     }
 
-    const task = await prisma.task.create({
-      data: {
-        title: title.trim(),
-        inbox: false,
-        completed: false,
-        project_id: projectId,
-      },
-    });
+    // Build task data with optional fields
+    const taskData = {
+      title: title.trim(),
+      inbox: false,
+      completed: false,
+      project_id: projectId,
+      due_date: options?.due_date ?? null,
+      defer_date: options?.defer_date ?? null,
+      notes: options?.notes ?? null,
+    };
+
+    let task: Task;
+
+    // Use transaction when tagIds provided to create task and tags atomically
+    if (options?.tagIds !== undefined && options.tagIds.length > 0) {
+      task = await prisma.$transaction(async (tx) => {
+        // Create the task
+        const createdTask = await tx.task.create({
+          data: taskData,
+        });
+
+        // Create tag associations
+        await tx.taskTag.createMany({
+          data: options.tagIds!.map((tagId) => ({
+            task_id: createdTask.id,
+            tag_id: tagId,
+          })),
+        });
+
+        return createdTask;
+      });
+    } else {
+      // No tags, just create the task
+      task = await prisma.task.create({
+        data: taskData,
+      });
+    }
 
     // Revalidate project detail page to show new task
     revalidatePath(`/projects/${projectId}`);
     // Revalidate projects list (task counts may update)
     revalidatePath("/projects");
+    // Revalidate today and forecast views (task may have due/defer dates)
+    revalidatePath("/today");
+    revalidatePath("/forecast");
+    // Revalidate tags view (task may have tags)
+    revalidatePath("/tags");
     // Revalidate layout to update navigation badge counts
     revalidatePath("/", "layout");
 
