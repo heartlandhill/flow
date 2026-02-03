@@ -17,20 +17,21 @@ async function main() {
   await prisma.user.deleteMany();
   await prisma.notificationSubscription.deleteMany();
 
-  // Create Areas
+  // Create Areas (10 life areas based on GTD principles)
   const areas = await Promise.all([
-    prisma.area.create({
-      data: { name: "Work", color: "#E8A87C", sort_order: 0 },
-    }),
-    prisma.area.create({
-      data: { name: "Personal", color: "#85B7D5", sort_order: 1 },
-    }),
-    prisma.area.create({
-      data: { name: "Health", color: "#9ED4A0", sort_order: 2 },
-    }),
+    prisma.area.create({ data: { name: "Home", color: "#E8A87C", sort_order: 0 } }),
+    prisma.area.create({ data: { name: "Work", color: "#5B8BD4", sort_order: 1 } }),
+    prisma.area.create({ data: { name: "School", color: "#9B7ED4", sort_order: 2 } }),
+    prisma.area.create({ data: { name: "Health", color: "#9ED4A0", sort_order: 3 } }),
+    prisma.area.create({ data: { name: "Family", color: "#D49BA5", sort_order: 4 } }),
+    prisma.area.create({ data: { name: "Friends", color: "#5BC4BF", sort_order: 5 } }),
+    prisma.area.create({ data: { name: "Service", color: "#D4B85B", sort_order: 6 } }),
+    prisma.area.create({ data: { name: "Finance", color: "#6B8BA3", sort_order: 7 } }),
+    prisma.area.create({ data: { name: "Spiritual", color: "#A085D4", sort_order: 8 } }),
+    prisma.area.create({ data: { name: "Recreation", color: "#D4855B", sort_order: 9 } }),
   ]);
 
-  const [work, personal, health] = areas;
+  const [homeArea, work, _school, health, _family, _friends, _service, _finance, spiritual, recreation] = areas;
   console.log(`Created ${areas.length} areas`);
 
   // Create Tags
@@ -83,7 +84,7 @@ async function main() {
     prisma.project.create({
       data: {
         name: "Apartment Renovation",
-        area_id: personal.id,
+        area_id: homeArea.id,
         status: ProjectStatus.ACTIVE,
         type: ProjectType.PARALLEL,
         review_interval_days: 7,
@@ -94,7 +95,7 @@ async function main() {
     prisma.project.create({
       data: {
         name: "Learn Japanese",
-        area_id: personal.id,
+        area_id: recreation.id,
         status: ProjectStatus.SOMEDAY,
         type: ProjectType.PARALLEL,
         sort_order: 1,
@@ -113,16 +114,16 @@ async function main() {
     }),
     prisma.project.create({
       data: {
-        name: "Meditation Habit",
-        area_id: health.id,
+        name: "Daily Devotional Habit",
+        area_id: spiritual.id,
         status: ProjectStatus.SOMEDAY,
         type: ProjectType.PARALLEL,
-        sort_order: 1,
+        sort_order: 0,
       },
     }),
   ]);
 
-  const [gtdApp, marketing, apartment, japanese, marathon, meditation] = projects;
+  const [gtdApp, marketing, apartment, japanese, marathon, devotional] = projects;
   console.log(`Created ${projects.length} projects`);
 
   // Create Tasks
