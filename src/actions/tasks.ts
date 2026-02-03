@@ -181,3 +181,60 @@ export async function updateTask(
     return { success: false, error: "Failed to update task" };
   }
 }
+
+/**
+ * Server action to clarify a task from the inbox.
+ * Always sets inbox = false (this is the dedicated clarification action).
+ * Updates project assignment and replaces all tags atomically.
+ */
+export async function clarifyTask(
+  taskId: string,
+  data: import("@/types").ClarifyInput
+): Promise<ActionResult<Task>> {
+  try {
+    // Validate task ID
+    if (!taskId || typeof taskId !== "string") {
+      return { success: false, error: "Task ID is required" };
+    }
+
+    // Use transaction to update task and tags atomically
+    const updatedTask = await prisma.$transaction(async (tx) => {
+      // Update the task - always set inbox = false
+      const task = await tx.task.update({
+        where: { id: taskId },
+        data: {
+          inbox: false,
+          project_id: data.project_id,
+        },
+      });
+
+      // Replace all tags: delete existing, create new
+      await tx.taskTag.deleteMany({
+        where: { task_id: taskId },
+      });
+
+      if (data.tagIds && data.tagIds.length > 0) {
+        await tx.taskTag.createMany({
+          data: data.tagIds.map((tagId) => ({
+            task_id: taskId,
+            tag_id: tagId,
+          })),
+        });
+      }
+
+      return task;
+    });
+
+    // Revalidate all views that show tasks
+    revalidatePath("/inbox");
+    revalidatePath("/today");
+    revalidatePath("/forecast");
+    revalidatePath("/projects");
+    revalidatePath("/tags");
+
+    return { success: true, data: updatedTask };
+  } catch (error) {
+    console.error("Clarify task error:", error);
+    return { success: false, error: "Failed to clarify task" };
+  }
+}
