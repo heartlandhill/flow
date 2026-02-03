@@ -668,14 +668,14 @@ export function AreaManagementModal({
                         {area._count.projects === 1 ? "project" : "projects"}
                       </span>
 
-                      {/* Delete button - shown on hover */}
+                      {/* Delete button - always visible on mobile, hover-reveal on desktop */}
                       <button
                         type="button"
                         onClick={() => handleStartDelete(area)}
                         className={`
                           p-1.5 rounded
                           text-[var(--text-tertiary)]
-                          opacity-0 group-hover:opacity-100
+                          opacity-100 md:opacity-0 md:group-hover:opacity-100
                           hover:text-[#E88B8B] hover:bg-[#E88B8B]/10
                           transition-all duration-150
                         `}
