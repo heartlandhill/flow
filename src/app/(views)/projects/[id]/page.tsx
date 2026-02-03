@@ -77,6 +77,16 @@ export default async function ProjectDetailPage({
     },
   });
 
+  // Fetch all tags for the new task modal
+  const allTags = await prisma.tag.findMany({
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true,
+      icon: true,
+    },
+  });
+
   // Calculate progress
   const totalTasks = project._count.tasks;
   const incompleteTasks = project.tasks.length;
@@ -158,6 +168,7 @@ export default async function ProjectDetailPage({
             projectId={id}
             projectName={project.name}
             areaColor={areaColor}
+            allTags={allTags}
           />
         ) : (
           <>
@@ -168,6 +179,7 @@ export default async function ProjectDetailPage({
                 projectId={id}
                 projectName={project.name}
                 areaColor={areaColor}
+                allTags={allTags}
                 variant="secondary"
               />
             </div>
@@ -183,6 +195,7 @@ interface EmptyStateProps {
   projectId: string;
   projectName: string;
   areaColor: string;
+  allTags: { id: string; name: string; icon: string | null }[];
 }
 
 /**
@@ -195,6 +208,7 @@ function EmptyState({
   projectId,
   projectName,
   areaColor,
+  allTags,
 }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center py-12 px-5 text-center">
@@ -221,6 +235,7 @@ function EmptyState({
         projectId={projectId}
         projectName={projectName}
         areaColor={areaColor}
+        allTags={allTags}
         variant="primary"
       />
     </div>

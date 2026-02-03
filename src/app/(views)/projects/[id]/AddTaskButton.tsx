@@ -10,6 +10,8 @@ interface AddTaskButtonProps {
   projectName: string;
   /** The area color for the visual indicator */
   areaColor: string;
+  /** All available tags for the new task modal */
+  allTags: { id: string; name: string; icon: string | null }[];
   /** Optional variant for different button styles */
   variant?: "primary" | "secondary";
 }
@@ -22,6 +24,7 @@ export function AddTaskButton({
   projectId,
   projectName,
   areaColor,
+  allTags: _allTags,
   variant = "primary",
 }: AddTaskButtonProps) {
   const { open } = useQuickCapture();
