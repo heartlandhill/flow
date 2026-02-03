@@ -195,6 +195,7 @@ export function QuickCapture() {
               rounded-md
               transition-all duration-150
               hover:opacity-90
+              active:scale-[0.98] active:brightness-90
               focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
               disabled:opacity-50 disabled:cursor-not-allowed
             `}
