@@ -75,7 +75,6 @@ export function TaskDetail({ areasWithProjects = [], allTags = [] }: TaskDetailP
     <aside
       className={`
         hidden md:flex
-        w-[340px] min-w-[340px]
         h-full
         flex-col
         bg-[var(--bg-sidebar)]
@@ -84,8 +83,8 @@ export function TaskDetail({ areasWithProjects = [], allTags = [] }: TaskDetailP
         transition-all duration-200 ease-out
         ${
           isOpen
-            ? "opacity-100 translate-x-0 pointer-events-auto"
-            : "opacity-0 translate-x-3 pointer-events-none"
+            ? "w-[340px] min-w-[340px] opacity-100 translate-x-0 pointer-events-auto"
+            : "w-0 min-w-0 opacity-0 pointer-events-none overflow-hidden border-l-0"
         }
       `}
       role="complementary"
