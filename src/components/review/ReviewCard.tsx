@@ -258,10 +258,12 @@ function CompletionState() {
 }
 
 /**
- * Next Actions list - shows available tasks for the project based on type.
- * - SEQUENTIAL projects: only the first incomplete task (by sort_order)
- * - PARALLEL projects: all incomplete tasks
- * Uses TaskRow component for consistent task display.
+ * Next Actions list - shows ALL incomplete tasks for review.
+ *
+ * Unlike action-oriented views (Today, Forecast), Review shows all tasks
+ * so users can examine the whole project, reorder if needed, and identify
+ * what's stuck. For SEQUENTIAL projects, the first task is shown at full
+ * opacity while subsequent tasks are dimmed to indicate they're waiting.
  */
 function NextActionsList({
   tasks,
@@ -272,29 +274,23 @@ function NextActionsList({
   project: ReviewableProject;
   onTaskComplete: (taskId: string) => void;
 }) {
-  // Filter to only incomplete tasks
-  const incompleteTasks = tasks.filter((task) => !task.completed);
+  // Filter to only incomplete tasks (sorted by sort_order)
+  const incompleteTasks = [...tasks]
+    .filter((task) => !task.completed)
+    .sort((a, b) => a.sort_order - b.sort_order);
 
-  // Apply project type filtering
-  // SEQUENTIAL: only first incomplete task (by sort_order)
-  // PARALLEL: all incomplete tasks
-  const availableTasks =
-    project.type === "SEQUENTIAL"
-      ? (() => {
-          const firstIncompleteId = getFirstIncompleteTaskId(incompleteTasks);
-          return firstIncompleteId
-            ? incompleteTasks.filter((task) => task.id === firstIncompleteId)
-            : [];
-        })()
-      : incompleteTasks;
+  // For SEQUENTIAL projects, identify the first task (the "available" one)
+  const firstIncompleteId = project.type === "SEQUENTIAL"
+    ? getFirstIncompleteTaskId(incompleteTasks)
+    : null;
 
-  // Convert TaskWithTags to TaskWithRelations for TaskRow
-  // Pass project: null for display since we're already viewing the project,
-  // but keep full task data as contextTask for TaskDetailPanel
+  // Convert tasks for display
+  // For SEQUENTIAL projects, mark whether each task is available or waiting
   const tasksForDisplay: Array<{
     displayTask: TaskWithRelations;
     contextTask: TaskWithRelations;
-  }> = availableTasks.map((task) => ({
+    isAvailable: boolean;
+  }> = incompleteTasks.map((task) => ({
     // Display task has project: null to hide redundant project pill
     displayTask: {
       ...task,
@@ -307,6 +303,9 @@ function NextActionsList({
       project: { ...project, area: project.area },
       reminders: [],
     },
+    // For PARALLEL projects, all tasks are available
+    // For SEQUENTIAL projects, only the first incomplete task is available
+    isAvailable: project.type === "PARALLEL" || task.id === firstIncompleteId,
   }));
 
   // Edge case: no tasks or all completed
@@ -322,13 +321,22 @@ function NextActionsList({
 
   return (
     <div className="-mx-2">
-      {tasksForDisplay.map(({ displayTask, contextTask }) => (
-        <TaskRow
+      {tasksForDisplay.map(({ displayTask, contextTask, isAvailable }) => (
+        <div
           key={displayTask.id}
-          task={displayTask}
-          contextTask={contextTask}
-          onComplete={onTaskComplete}
-        />
+          className={`relative ${!isAvailable ? "opacity-50" : ""}`}
+        >
+          <TaskRow
+            task={displayTask}
+            contextTask={contextTask}
+            onComplete={onTaskComplete}
+          />
+          {!isAvailable && (
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[var(--text-tertiary)]">
+              (waiting)
+            </span>
+          )}
+        </div>
       ))}
     </div>
   );
