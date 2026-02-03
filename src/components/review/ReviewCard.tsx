@@ -58,49 +58,69 @@ export function ReviewCard({
   onTaskComplete,
   onReorderTasks,
 }: ReviewCardProps) {
-  // Current index in the project list
-  const [currentIndex, setCurrentIndex] = useState(0);
   // React transition for non-blocking server action calls
   const [isPending, startTransition] = useTransition();
 
-  // Clamp currentIndex to valid range (in case list shrinks after revalidation)
-  const totalProjects = projectsWithStats.length;
-  const safeIndex = Math.min(currentIndex, Math.max(0, totalProjects - 1));
+  // Session-based tracking: IDs of projects already reviewed in this session
+  // This prevents the infinite cycling bug where reviewed projects reappear
+  // because their next_review_date gets updated but they stay in the query results
+  const [reviewedIds, setReviewedIds] = useState<Set<string>>(new Set());
 
-  // Current project and stats
-  const current = totalProjects > 0 ? projectsWithStats[safeIndex] : null;
+  // Track the order of reviewed projects to enable Back navigation
+  const [reviewHistory, setReviewHistory] = useState<string[]>([]);
 
-  // Determine if on first or last project
-  const isFirstProject = safeIndex === 0;
-  const isLastProject = safeIndex === totalProjects - 1;
+  // Initial total count (before filtering) - used for progress display "X of Y"
+  const initialTotal = projectsWithStats.length;
 
-  // Handle "Previous" button click
+  // Filter out projects already reviewed this session
+  const unreviewedProjects = projectsWithStats.filter(
+    ({ project }) => !reviewedIds.has(project.id)
+  );
+
+  // Current project is always the first unreviewed one
+  const current = unreviewedProjects.length > 0 ? unreviewedProjects[0] : null;
+
+  // Progress tracking: how many we've reviewed + 1 (current) out of initial total
+  const currentPosition = reviewedIds.size + 1;
+
+  // Determine if this is the first or last project in the session
+  const isFirstProject = reviewedIds.size === 0;
+  const isLastProject = unreviewedProjects.length === 1;
+
+  // Handle "Previous" button click - go back to previously reviewed project
   const handlePrevious = useCallback(() => {
-    if (currentIndex > 0) {
-      setCurrentIndex((prev) => prev - 1);
+    if (reviewHistory.length > 0) {
+      // Pop the last reviewed project from history
+      const lastReviewedId = reviewHistory[reviewHistory.length - 1];
+      setReviewHistory((prev) => prev.slice(0, -1));
+      // Remove it from the reviewed set so it shows again
+      setReviewedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(lastReviewedId);
+        return next;
+      });
     }
-  }, [currentIndex]);
+  }, [reviewHistory]);
 
   // Handle "Mark Reviewed" / "Finish Review" button click
   const handleMarkReviewed = useCallback(() => {
     if (isPending || !current) return;
 
+    const projectId = current.project.id;
+
     startTransition(async () => {
-      const result = await onMarkReviewed(current.project.id);
+      const result = await onMarkReviewed(projectId);
 
       if (!result.success) {
         console.error("Failed to mark project as reviewed:", result.error);
         return;
       }
 
-      // Note: We don't increment currentIndex here because:
-      // 1. markProjectReviewed updates next_review_date to the future
-      // 2. revalidatePath("/review") re-fetches the project list
-      // 3. The reviewed project is removed from the list (no longer due)
-      // 4. The next project naturally slides into the current index position
-      //
-      // If this was the last project, the list will be empty after revalidation,
-      // which is handled by the empty state check below.
+      // Session-based tracking: add this project's ID to the reviewed set
+      // This ensures it won't appear again even after revalidatePath re-fetches
+      // the project list (which still includes reviewed projects with future dates)
+      setReviewedIds((prev) => new Set(prev).add(projectId));
+      setReviewHistory((prev) => [...prev, projectId]);
     });
   }, [isPending, current, onMarkReviewed]);
 
@@ -137,7 +157,7 @@ export function ReviewCard({
       {/* Progress indicator */}
       <div className="flex items-center justify-end mb-4">
         <span className="text-[13px] font-normal text-[var(--text-secondary)]">
-          {currentIndex + 1} of {totalProjects}
+          {currentPosition} of {initialTotal}
         </span>
       </div>
 
