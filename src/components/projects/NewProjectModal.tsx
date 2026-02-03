@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { ChevronIcon } from "@/components/ui/Icons";
+import { createProject } from "@/actions/projects";
 
 /**
  * Area type for the modal props (minimal - just what we need for display)
@@ -129,12 +130,33 @@ export function NewProjectModal({
   );
 
   const handleSubmit = useCallback(async () => {
-    // Placeholder for submission logic (will be implemented in subtask 1-3)
+    // Don't submit if empty, no area selected, or already submitting
     const trimmedName = name.trim();
-    if (!trimmedName || isSubmitting) return;
+    if (!trimmedName || !areaId || isSubmitting) return;
 
-    // Validation will be added in subtask 1-3
-  }, [name, isSubmitting]);
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const result = await createProject({
+        name: trimmedName,
+        areaId,
+        type: projectType,
+      });
+
+      if (result.success && result.data) {
+        onClose();
+        // Notify parent of successful creation with new project ID
+        onCreated?.(result.data.id);
+      } else {
+        setError(result.error || "Failed to create project");
+      }
+    } catch {
+      setError("Failed to create project");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [name, areaId, projectType, isSubmitting, onClose, onCreated]);
 
   // Handle area selection from custom dropdown
   const handleAreaSelect = useCallback((selectedAreaId: string) => {
@@ -400,7 +422,7 @@ export function NewProjectModal({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!name.trim() || !hasAreas || isSubmitting}
+            disabled={!name.trim() || !areaId || isSubmitting}
             className={`
               px-4 py-1.5
               text-[14px] font-medium
