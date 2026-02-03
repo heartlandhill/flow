@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useOverlay } from "@/context/OverlayContext";
-import { createTag, updateTag } from "@/actions/tags";
+import { createTag, updateTag, deleteTag } from "@/actions/tags";
 import type { TagWithCount } from "@/types";
 
 /**
@@ -422,6 +422,10 @@ function TagListItem({ tag, onUpdated }: TagListItemProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Delete confirmation state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Refs for input focus management
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -518,115 +522,275 @@ function TagListItem({ tag, onUpdated }: TagListItemProps) {
     [handleSave, handleCancelEdit]
   );
 
+  // Handle delete button click - show confirmation dialog
+  const handleDeleteClick = useCallback(() => {
+    setShowDeleteConfirm(true);
+  }, []);
+
+  // Handle cancel delete - close confirmation dialog
+  const handleCancelDelete = useCallback(() => {
+    setShowDeleteConfirm(false);
+  }, []);
+
+  // Handle confirm delete - calls deleteTag and handles success/failure
+  const handleConfirmDelete = useCallback(async () => {
+    if (isDeleting) return;
+
+    setIsDeleting(true);
+    setError(null);
+
+    try {
+      const result = await deleteTag(tag.id);
+
+      if (result.success) {
+        // Close dialogs and notify parent on success
+        setShowDeleteConfirm(false);
+        setIsEditing(false);
+        onUpdated?.();
+      } else {
+        setError(result.error || "Failed to delete tag");
+        setShowDeleteConfirm(false);
+      }
+    } catch {
+      setError("Failed to delete tag");
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [tag.id, isDeleting, onUpdated]);
+
+  // Handle overlay click for delete confirmation dialog
+  const handleDeleteOverlayClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (e.target === e.currentTarget) {
+        setShowDeleteConfirm(false);
+      }
+    },
+    []
+  );
+
   // Edit mode UI
   if (isEditing) {
     return (
-      <div
-        className={`
-          flex flex-col gap-2 px-3 py-2.5
-          bg-[var(--bg-surface)]
-          border border-[var(--accent)]
-          rounded-lg
-          transition-colors duration-150
-        `}
-      >
-        <div className="flex items-center gap-2">
-          {/* Icon input */}
-          <input
-            type="text"
-            value={editedIcon}
-            onChange={(e) => setEditedIcon(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={isSubmitting}
-            placeholder="#"
-            maxLength={2}
-            className={`
-              w-10 h-9
-              text-[18px] text-center
-              text-[var(--text-primary)]
-              placeholder:text-[var(--text-tertiary)]
-              bg-[var(--bg-root)]
-              border border-[var(--border)]
-              rounded-md
-              focus:outline-none focus:border-[var(--accent)]
-              transition-colors duration-150
-              disabled:opacity-60
-            `}
-            aria-label="Tag icon"
-          />
+      <>
+        <div
+          className={`
+            flex flex-col gap-2 px-3 py-2.5
+            bg-[var(--bg-surface)]
+            border border-[var(--accent)]
+            rounded-lg
+            transition-colors duration-150
+          `}
+        >
+          <div className="flex items-center gap-2">
+            {/* Icon input */}
+            <input
+              type="text"
+              value={editedIcon}
+              onChange={(e) => setEditedIcon(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isSubmitting || isDeleting}
+              placeholder="#"
+              maxLength={2}
+              className={`
+                w-10 h-9
+                text-[18px] text-center
+                text-[var(--text-primary)]
+                placeholder:text-[var(--text-tertiary)]
+                bg-[var(--bg-root)]
+                border border-[var(--border)]
+                rounded-md
+                focus:outline-none focus:border-[var(--accent)]
+                transition-colors duration-150
+                disabled:opacity-60
+              `}
+              aria-label="Tag icon"
+            />
 
-          {/* Name input */}
-          <input
-            ref={nameInputRef}
-            type="text"
-            value={editedName}
-            onChange={(e) => setEditedName(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={isSubmitting}
-            placeholder="Tag name"
-            className={`
-              flex-1 h-9
-              px-2
-              text-[14px]
-              text-[var(--text-primary)]
-              placeholder:text-[var(--text-tertiary)]
-              bg-[var(--bg-root)]
-              border border-[var(--border)]
-              rounded-md
-              focus:outline-none focus:border-[var(--accent)]
-              transition-colors duration-150
-              disabled:opacity-60
-            `}
-            aria-label="Tag name"
-          />
+            {/* Name input */}
+            <input
+              ref={nameInputRef}
+              type="text"
+              value={editedName}
+              onChange={(e) => setEditedName(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isSubmitting || isDeleting}
+              placeholder="Tag name"
+              className={`
+                flex-1 h-9
+                px-2
+                text-[14px]
+                text-[var(--text-primary)]
+                placeholder:text-[var(--text-tertiary)]
+                bg-[var(--bg-root)]
+                border border-[var(--border)]
+                rounded-md
+                focus:outline-none focus:border-[var(--accent)]
+                transition-colors duration-150
+                disabled:opacity-60
+              `}
+              aria-label="Tag name"
+            />
 
-          {/* Save button */}
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={!editedName.trim() || isSubmitting}
-            className={`
-              px-2.5 h-9
-              text-[12px] font-medium
-              text-[var(--bg-root)]
-              bg-[var(--accent)]
-              rounded-md
-              transition-all duration-150
-              hover:opacity-90
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]
-              disabled:opacity-50 disabled:cursor-not-allowed
-            `}
-          >
-            {isSubmitting ? "..." : "Save"}
-          </button>
+            {/* Save button */}
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!editedName.trim() || isSubmitting || isDeleting}
+              className={`
+                px-2.5 h-9
+                text-[12px] font-medium
+                text-[var(--bg-root)]
+                bg-[var(--accent)]
+                rounded-md
+                transition-all duration-150
+                hover:opacity-90
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]
+                disabled:opacity-50 disabled:cursor-not-allowed
+              `}
+            >
+              {isSubmitting ? "..." : "Save"}
+            </button>
 
-          {/* Cancel button */}
-          <button
-            type="button"
-            onClick={handleCancelEdit}
-            disabled={isSubmitting}
-            className={`
-              px-2.5 h-9
-              text-[12px] font-medium
-              text-[var(--text-secondary)]
-              bg-[var(--bg-root)]
-              border border-[var(--border)]
-              rounded-md
-              transition-all duration-150
-              hover:bg-[var(--bg-hover)]
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border)]
-              disabled:opacity-50 disabled:cursor-not-allowed
-            `}
-          >
-            Cancel
-          </button>
+            {/* Cancel button */}
+            <button
+              type="button"
+              onClick={handleCancelEdit}
+              disabled={isSubmitting || isDeleting}
+              className={`
+                px-2.5 h-9
+                text-[12px] font-medium
+                text-[var(--text-secondary)]
+                bg-[var(--bg-root)]
+                border border-[var(--border)]
+                rounded-md
+                transition-all duration-150
+                hover:bg-[var(--bg-hover)]
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border)]
+                disabled:opacity-50 disabled:cursor-not-allowed
+              `}
+            >
+              Cancel
+            </button>
+          </div>
+
+          {/* Delete button and error row */}
+          <div className="flex items-center justify-between">
+            {/* Delete button */}
+            <button
+              type="button"
+              onClick={handleDeleteClick}
+              disabled={isSubmitting || isDeleting}
+              className={`
+                text-[12px] font-medium
+                text-[#E88B8B]
+                transition-all duration-150
+                hover:opacity-80
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E88B8B] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-surface)]
+                disabled:opacity-50 disabled:cursor-not-allowed
+              `}
+            >
+              Delete Tag
+            </button>
+
+            {/* Error message */}
+            {error && (
+              <p className="text-[12px] text-[#E88B8B] px-1">{error}</p>
+            )}
+          </div>
         </div>
 
-        {/* Error message */}
-        {error && (
-          <p className="text-[12px] text-[#E88B8B] px-1">{error}</p>
+        {/* Delete confirmation dialog */}
+        {showDeleteConfirm && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-tag-confirm-title"
+            onClick={handleDeleteOverlayClick}
+            className={`
+              fixed inset-0 z-[60]
+              flex items-center justify-center
+              bg-black/60 backdrop-blur-sm
+              animate-in fade-in duration-150
+            `}
+          >
+            {/* Dialog Card */}
+            <div
+              className={`
+                /* Width */
+                w-[calc(100%-32px)] max-w-[320px]
+
+                /* Styling */
+                bg-[var(--bg-card)]
+                border border-[var(--border)]
+                rounded-[14px]
+                shadow-xl
+                p-5
+
+                /* Animation */
+                animate-in fade-in slide-in-from-bottom-2 zoom-in-[0.97]
+                duration-200
+              `}
+            >
+              {/* Title */}
+              <h3
+                id="delete-tag-confirm-title"
+                className="text-[16px] font-medium text-[var(--text-primary)] text-center mb-2"
+              >
+                Delete &ldquo;{tag.name}&rdquo;?
+              </h3>
+
+              {/* Description with task count warning */}
+              <p className="text-[14px] text-[var(--text-secondary)] text-center mb-4">
+                {tag._count.tasks > 0
+                  ? `This tag is used by ${tag._count.tasks} ${tag._count.tasks === 1 ? "task" : "tasks"}. The tag will be removed from ${tag._count.tasks === 1 ? "that task" : "those tasks"}.`
+                  : "This tag has no tasks and will be permanently deleted."}
+              </p>
+
+              {/* Action buttons */}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleCancelDelete}
+                  disabled={isDeleting}
+                  className={`
+                    flex-1 py-2.5
+                    text-[14px] font-medium
+                    text-[var(--text-secondary)]
+                    bg-[var(--bg-surface)]
+                    border border-[var(--border)]
+                    rounded-md
+                    transition-all duration-150
+                    hover:opacity-80
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                  `}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDelete}
+                  disabled={isDeleting}
+                  className={`
+                    flex-1 py-2.5
+                    text-[14px] font-medium
+                    text-white
+                    bg-[#E88B8B]
+                    rounded-md
+                    transition-all duration-150
+                    hover:opacity-90
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E88B8B] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                  `}
+                >
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
-      </div>
+      </>
     );
   }
 
