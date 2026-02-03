@@ -243,7 +243,7 @@ function TagCard({ tag, isActive, onClick }: TagCardProps) {
             ${
               isActive
                 ? "text-[var(--accent)] bg-[rgba(232,168,124,0.15)]"
-                : "text-[var(--text-tertiary)] bg-[var(--bg-tertiary)]"
+                : "text-[var(--text-tertiary)] bg-[var(--bg-hover)]"
             }
           `}
         >
