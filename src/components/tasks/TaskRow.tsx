@@ -10,6 +10,10 @@ interface TaskRowProps {
   task: TaskWithRelations;
   onComplete: (taskId: string) => void;
   onSelect?: (taskId: string) => void;
+  /** Optional full task data to pass to context when selected.
+   *  Use this when task prop is modified for display (e.g., project: null)
+   *  but you want the full data available in TaskDetailPanel. */
+  contextTask?: TaskWithRelations;
 }
 
 /**
@@ -76,7 +80,7 @@ function getAreaColor(areaColor: string | null | undefined): string {
   return areaColor || "var(--accent)";
 }
 
-export function TaskRow({ task, onComplete, onSelect }: TaskRowProps) {
+export function TaskRow({ task, onComplete, onSelect, contextTask }: TaskRowProps) {
   // Animation state: 'idle' | 'completing' | 'fading'
   const [animationState, setAnimationState] = useState<"idle" | "completing" | "fading">("idle");
   const { selectTask } = useSelectedTask();
@@ -101,10 +105,11 @@ export function TaskRow({ task, onComplete, onSelect }: TaskRowProps) {
   const handleRowClick = useCallback(() => {
     if (animationState !== "idle") return;
     // Pass full task data to context for TaskDetailPanel
-    selectTask(task);
+    // Use contextTask if provided (for cases where task is modified for display)
+    selectTask(contextTask ?? task);
     // Also call onSelect for backwards compatibility
     onSelect?.(task.id);
-  }, [animationState, selectTask, task, onSelect]);
+  }, [animationState, selectTask, contextTask, task, onSelect]);
 
   const dueDateInfo = getDueDateInfo(task.due_date);
   const hasNotes = task.notes && task.notes.trim().length > 0;
