@@ -113,3 +113,6 @@ export interface ActionResult<T = undefined> {
   error?: string;
   data?: T;
 }
+
+// Re-export notification types
+export type { NotificationPayload } from "@/lib/notifications/ntfy";
