@@ -50,14 +50,14 @@ function isValidTokenFormat(token: string): boolean {
 }
 
 /**
- * Middleware to protect routes by validating session cookies.
+ * Proxy to protect routes by validating session cookies.
  * Redirects unauthenticated users to /login for protected routes.
  *
- * Note: Since Edge Runtime can't access Prisma, this middleware only checks
+ * Note: Since Edge Runtime can't access Prisma, this proxy only checks
  * that the session cookie exists and has a valid format. Full session validation
  * against the database happens in server components and API routes.
  */
-export async function middleware(request: NextRequest): Promise<NextResponse> {
+export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
   // Allow public paths through without authentication
@@ -91,7 +91,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   return NextResponse.next();
 }
 
-// Configure which routes the middleware should run on
+// Configure which routes the proxy should run on
 export const config = {
   matcher: [
     /*
@@ -100,7 +100,7 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico, sw.js (static files at root)
      *
-     * Note: We still check PUBLIC_PATHS in the middleware function itself
+     * Note: We still check PUBLIC_PATHS in the proxy function itself
      * for additional exclusions like /login and /api/snooze
      */
     "/((?!_next/static|_next/image|favicon.ico|sw.js).*)",

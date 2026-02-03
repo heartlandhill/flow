@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Middleware runs in Edge Runtime by default in Next.js 16
-  // Session validation in middleware checks cookie format only
+  // Proxy runs in Node.js runtime by default in Next.js 16
+  // Session validation in proxy checks cookie format only
   // Full database validation happens in server components
 };
 
