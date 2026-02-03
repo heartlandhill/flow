@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useOverlay } from "@/context/OverlayContext";
-import { updateTag } from "@/actions/tags";
+import { createTag, updateTag } from "@/actions/tags";
 import type { TagWithCount } from "@/types";
 
 /**
@@ -29,6 +29,7 @@ export function TagManagementModal({
   onUpdated,
 }: TagManagementModalProps) {
   const { registerOverlay, unregisterOverlay } = useOverlay();
+  const [isCreating, setIsCreating] = useState(false);
 
   // Register overlay when modal is open
   useEffect(() => {
@@ -37,6 +38,13 @@ export function TagManagementModal({
       return () => unregisterOverlay("tag-management-modal");
     }
   }, [isOpen, registerOverlay, unregisterOverlay]);
+
+  // Reset create form state when modal opens/closes
+  useEffect(() => {
+    if (!isOpen) {
+      setIsCreating(false);
+    }
+  }, [isOpen]);
 
   // Handle Escape key to close modal
   useEffect(() => {
@@ -61,6 +69,17 @@ export function TagManagementModal({
     },
     [onClose]
   );
+
+  // Handle successful tag creation
+  const handleTagCreated = useCallback(() => {
+    setIsCreating(false);
+    onUpdated?.();
+  }, [onUpdated]);
+
+  // Cancel create mode
+  const handleCancelCreate = useCallback(() => {
+    setIsCreating(false);
+  }, []);
 
   // Don't render anything when closed
   if (!isOpen) return null;
@@ -164,26 +183,219 @@ export function TagManagementModal({
           )}
         </div>
 
-        {/* Footer - placeholder for create new tag */}
+        {/* Footer - create new tag */}
         <div className="px-4 pb-4 pt-2">
-          <button
-            type="button"
-            className={`
-              w-full py-2.5
-              text-[14px] font-medium
-              text-[var(--accent)]
-              bg-transparent
-              border border-dashed border-[var(--border)]
-              rounded-lg
-              transition-all duration-150
-              hover:border-[var(--accent)] hover:bg-[rgba(232,168,124,0.08)]
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]
-            `}
-          >
-            + New Tag
-          </button>
+          {isCreating ? (
+            <CreateTagForm
+              onCreated={handleTagCreated}
+              onCancel={handleCancelCreate}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsCreating(true)}
+              className={`
+                w-full py-2.5
+                text-[14px] font-medium
+                text-[var(--accent)]
+                bg-transparent
+                border border-dashed border-[var(--border)]
+                rounded-lg
+                transition-all duration-150
+                hover:border-[var(--accent)] hover:bg-[rgba(232,168,124,0.08)]
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]
+              `}
+            >
+              + New Tag
+            </button>
+          )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Props for the CreateTagForm component
+ */
+interface CreateTagFormProps {
+  onCreated: () => void;
+  onCancel: () => void;
+}
+
+/**
+ * Inline form for creating a new tag.
+ * Follows the same pattern as TagListItem edit mode for consistency.
+ */
+function CreateTagForm({ onCreated, onCancel }: CreateTagFormProps) {
+  const [name, setName] = useState("");
+  const [icon, setIcon] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus name input on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      nameInputRef.current?.focus();
+    }, 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Handle form submission
+  const handleSubmit = useCallback(async () => {
+    const trimmedName = name.trim();
+    const trimmedIcon = icon.trim();
+
+    if (!trimmedName) {
+      setError("Tag name is required");
+      return;
+    }
+
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const result = await createTag({
+        name: trimmedName,
+        icon: trimmedIcon || undefined,
+      });
+
+      if (result.success) {
+        onCreated();
+      } else {
+        setError(result.error || "Failed to create tag");
+      }
+    } catch {
+      setError("Failed to create tag");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [name, icon, isSubmitting, onCreated]);
+
+  // Handle key events in inputs
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSubmit();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        onCancel();
+      }
+    },
+    [handleSubmit, onCancel]
+  );
+
+  return (
+    <div
+      className={`
+        flex flex-col gap-2 px-3 py-2.5
+        bg-[var(--bg-surface)]
+        border border-[var(--accent)]
+        rounded-lg
+        transition-colors duration-150
+      `}
+    >
+      <div className="flex items-center gap-2">
+        {/* Icon input */}
+        <input
+          type="text"
+          value={icon}
+          onChange={(e) => setIcon(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={isSubmitting}
+          placeholder="#"
+          maxLength={2}
+          className={`
+            w-10 h-9
+            text-[18px] text-center
+            text-[var(--text-primary)]
+            placeholder:text-[var(--text-tertiary)]
+            bg-[var(--bg-root)]
+            border border-[var(--border)]
+            rounded-md
+            focus:outline-none focus:border-[var(--accent)]
+            transition-colors duration-150
+            disabled:opacity-60
+          `}
+          aria-label="Tag icon (optional)"
+        />
+
+        {/* Name input */}
+        <input
+          ref={nameInputRef}
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={isSubmitting}
+          placeholder="Tag name"
+          className={`
+            flex-1 h-9
+            px-2
+            text-[14px]
+            text-[var(--text-primary)]
+            placeholder:text-[var(--text-tertiary)]
+            bg-[var(--bg-root)]
+            border border-[var(--border)]
+            rounded-md
+            focus:outline-none focus:border-[var(--accent)]
+            transition-colors duration-150
+            disabled:opacity-60
+          `}
+          aria-label="Tag name"
+        />
+
+        {/* Create button */}
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={!name.trim() || isSubmitting}
+          className={`
+            px-2.5 h-9
+            text-[12px] font-medium
+            text-[var(--bg-root)]
+            bg-[var(--accent)]
+            rounded-md
+            transition-all duration-150
+            hover:opacity-90
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]
+            disabled:opacity-50 disabled:cursor-not-allowed
+          `}
+        >
+          {isSubmitting ? "..." : "Create"}
+        </button>
+
+        {/* Cancel button */}
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={isSubmitting}
+          className={`
+            px-2.5 h-9
+            text-[12px] font-medium
+            text-[var(--text-secondary)]
+            bg-[var(--bg-root)]
+            border border-[var(--border)]
+            rounded-md
+            transition-all duration-150
+            hover:bg-[var(--bg-hover)]
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border)]
+            disabled:opacity-50 disabled:cursor-not-allowed
+          `}
+        >
+          Cancel
+        </button>
+      </div>
+
+      {/* Error message */}
+      {error && (
+        <p className="text-[12px] text-[#E88B8B] px-1">{error}</p>
+      )}
     </div>
   );
 }
