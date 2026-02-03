@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useTransition, useMemo } from "react";
+import { useState, useCallback, useTransition, useMemo, useEffect } from "react";
 import { TaskRow } from "@/components/tasks/TaskRow";
 import { completeTask } from "@/actions/tasks";
 import { useSearch } from "@/context/SearchContext";
@@ -17,6 +17,11 @@ interface InboxListProps {
 export function InboxList({ initialTasks }: InboxListProps) {
   // Local state for optimistic updates
   const [tasks, setTasks] = useState<TaskWithRelations[]>(initialTasks);
+
+  // Sync local state when server data changes (e.g., after revalidatePath)
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
   // Track tasks being completed (for preventing double-clicks)
   const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
   // React transition for non-blocking server action calls
