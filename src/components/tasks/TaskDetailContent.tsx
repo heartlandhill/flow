@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { ForecastIcon } from "@/components/ui/Icons";
 import type { TaskWithRelations } from "@/types";
 
@@ -128,33 +129,67 @@ function getAreaColor(areaColor: string | null | undefined): string {
 }
 
 /**
- * TaskDetailContent renders all task fields in a read-only format.
+ * TaskDetailContent renders task fields in display or edit mode.
  * Shared between mobile bottom sheet and desktop side panel.
  */
 export function TaskDetailContent({ task, onEditClick }: TaskDetailContentProps) {
+  const [isEditing, setIsEditing] = useState(false);
+
   const dueDateInfo = getDueDateInfo(task.due_date);
   const deferDateInfo = getDeferDateInfo(task.defer_date);
   const areaColor = getAreaColor(task.project?.area?.color);
   const hasNotes = task.notes && task.notes.trim().length > 0;
   const hasTags = task.tags.length > 0;
 
+  // Handle entering edit mode
+  const handleEditClick = () => {
+    setIsEditing(true);
+    onEditClick?.();
+  };
+
+  // Handle canceling edit mode (return to display mode)
+  const handleCancelClick = () => {
+    setIsEditing(false);
+  };
+
   return (
     <div className="flex flex-col h-full">
-      {/* Header with title and edit button */}
+      {/* Header with title and edit/cancel button */}
       <div className="flex items-start justify-between gap-3 mb-4">
-        <h2
-          className="font-newsreader text-[20px] font-medium leading-snug text-[var(--text-primary)]"
-          style={{ fontFamily: "var(--font-newsreader)" }}
-        >
-          {task.title}
-        </h2>
-        <button
-          type="button"
-          onClick={onEditClick}
-          className="flex-shrink-0 text-[14px] font-medium text-[var(--accent)] hover:opacity-80 transition-opacity"
-        >
-          Edit
-        </button>
+        {isEditing ? (
+          // Edit mode: show editable title input (to be added in subtask-2-2)
+          <h2
+            className="font-newsreader text-[20px] font-medium leading-snug text-[var(--text-primary)]"
+            style={{ fontFamily: "var(--font-newsreader)" }}
+          >
+            {task.title}
+          </h2>
+        ) : (
+          // Display mode: show title text
+          <h2
+            className="font-newsreader text-[20px] font-medium leading-snug text-[var(--text-primary)]"
+            style={{ fontFamily: "var(--font-newsreader)" }}
+          >
+            {task.title}
+          </h2>
+        )}
+        {isEditing ? (
+          <button
+            type="button"
+            onClick={handleCancelClick}
+            className="flex-shrink-0 text-[14px] font-medium text-[var(--text-secondary)] hover:opacity-80 transition-opacity"
+          >
+            Cancel
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleEditClick}
+            className="flex-shrink-0 text-[14px] font-medium text-[var(--accent)] hover:opacity-80 transition-opacity"
+          >
+            Edit
+          </button>
+        )}
       </div>
 
       {/* Field sections with 16px spacing */}
