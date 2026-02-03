@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useQuickCapture } from "@/hooks/useQuickCapture";
-import { createTask } from "@/actions/tasks";
+import { createTask, createTaskInProject } from "@/actions/tasks";
 import { InboxIcon } from "@/components/ui/Icons";
 
 /**
@@ -51,7 +51,10 @@ export function QuickCapture() {
     setError(null);
 
     try {
-      const result = await createTask(trimmedTitle);
+      // Call appropriate action based on context
+      const result = projectId
+        ? await createTaskInProject(trimmedTitle, projectId)
+        : await createTask(trimmedTitle);
 
       if (result.success) {
         close();
@@ -63,7 +66,7 @@ export function QuickCapture() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [title, isSubmitting, close]);
+  }, [title, isSubmitting, close, projectId]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
