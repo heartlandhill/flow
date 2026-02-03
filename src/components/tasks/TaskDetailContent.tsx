@@ -17,11 +17,20 @@ interface AreaWithProjects {
   projects: ProjectForDropdown[];
 }
 
+// Simplified type for tag toggle pills
+interface TagForToggle {
+  id: string;
+  name: string;
+  icon: string | null;
+}
+
 interface TaskDetailContentProps {
   task: TaskWithRelations;
   onEditClick?: () => void;
   /** Areas with their projects for the project dropdown */
   areasWithProjects?: AreaWithProjects[];
+  /** All available tags for tag toggle pills */
+  allTags?: TagForToggle[];
 }
 
 /**
@@ -147,7 +156,7 @@ function getAreaColor(areaColor: string | null | undefined): string {
  * TaskDetailContent renders task fields in display or edit mode.
  * Shared between mobile bottom sheet and desktop side panel.
  */
-export function TaskDetailContent({ task, onEditClick, areasWithProjects = [] }: TaskDetailContentProps) {
+export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], allTags = [] }: TaskDetailContentProps) {
   const [isEditing, setIsEditing] = useState(false);
 
   // Helper to convert Date to YYYY-MM-DD string for input type="date"
@@ -162,6 +171,9 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [] }:
   const [editedProjectId, setEditedProjectId] = useState<string | null>(task.project_id);
   const [editedDueDate, setEditedDueDate] = useState(dateToInputString(task.due_date));
   const [editedDeferDate, setEditedDeferDate] = useState(dateToInputString(task.defer_date));
+  const [editedTagIds, setEditedTagIds] = useState<Set<string>>(
+    () => new Set(task.tags.map((t) => t.tag_id))
+  );
 
   // Ref for notes textarea auto-grow
   const notesTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -200,6 +212,7 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [] }:
     setEditedProjectId(task.project_id);
     setEditedDueDate(dateToInputString(task.due_date));
     setEditedDeferDate(dateToInputString(task.defer_date));
+    setEditedTagIds(new Set(task.tags.map((t) => t.tag_id)));
     setIsEditing(true);
     onEditClick?.();
   };
@@ -212,7 +225,21 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [] }:
     setEditedProjectId(task.project_id);
     setEditedDueDate(dateToInputString(task.due_date));
     setEditedDeferDate(dateToInputString(task.defer_date));
+    setEditedTagIds(new Set(task.tags.map((t) => t.tag_id)));
     setIsEditing(false);
+  };
+
+  // Handle tag toggle
+  const handleTagToggle = (tagId: string) => {
+    setEditedTagIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(tagId)) {
+        next.delete(tagId);
+      } else {
+        next.add(tagId);
+      }
+      return next;
+    });
   };
 
   // Handle notes textarea change with auto-grow
@@ -401,7 +428,40 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [] }:
           <span className="text-[12px] font-medium text-[var(--text-tertiary)] uppercase tracking-wide">
             Tags
           </span>
-          {hasTags ? (
+          {isEditing ? (
+            // Edit mode: show toggle pills for all available tags
+            allTags.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {allTags.map((tag) => {
+                  const isActive = editedTagIds.has(tag.id);
+                  return (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onClick={() => handleTagToggle(tag.id)}
+                      className={`
+                        inline-flex items-center gap-1 px-2 py-1 rounded-full text-[13px] font-medium
+                        transition-colors
+                        ${
+                          isActive
+                            ? "border border-[var(--accent)] bg-[rgba(232,168,124,0.12)] text-[var(--accent)]"
+                            : "border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]"
+                        }
+                      `}
+                    >
+                      <span>{tag.icon || "#"}</span>
+                      {tag.name}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <span className="text-[14px] text-[var(--text-tertiary)]">
+                No tags available
+              </span>
+            )
+          ) : hasTags ? (
+            // Display mode with tags
             <div className="flex flex-wrap gap-1.5">
               {task.tags.map((taskTag) => (
                 <span
@@ -414,6 +474,7 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [] }:
               ))}
             </div>
           ) : (
+            // Display mode without tags
             <span className="text-[14px] text-[var(--text-tertiary)]">
               No tags
             </span>
