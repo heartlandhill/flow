@@ -4,10 +4,12 @@ import { useState, useCallback, useTransition, useMemo } from "react";
 import { TaskRow } from "@/components/tasks/TaskRow";
 import { completeTask } from "@/actions/tasks";
 import { useSearch } from "@/context/SearchContext";
-import type { TagWithTasks, TaskWithRelations } from "@/types";
+import type { TagWithTasks, TagWithCount, TaskWithRelations } from "@/types";
 
 interface TagsGridProps {
   initialTags: TagWithTasks[];
+  /** All tags with task counts for the management modal */
+  allTags: TagWithCount[];
 }
 
 /**
@@ -15,7 +17,7 @@ interface TagsGridProps {
  * Displays a grid of tag cards with single-selection behavior.
  * When a tag is selected, shows a filtered list of incomplete tasks.
  */
-export function TagsGrid({ initialTags }: TagsGridProps) {
+export function TagsGrid({ initialTags, allTags }: TagsGridProps) {
   // Local state for tags (for optimistic task count updates)
   const [tags, setTags] = useState<TagWithTasks[]>(initialTags);
   // Currently selected tag ID (null = no selection)
