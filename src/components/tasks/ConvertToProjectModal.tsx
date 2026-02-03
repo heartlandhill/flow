@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { ChevronIcon } from "@/components/ui/Icons";
 import { convertTaskToProject } from "@/actions/tasks";
+import { useOverlay } from "@/context/OverlayContext";
 
 /**
  * Area type for the modal props (minimal - just what we need for display)
@@ -45,6 +46,8 @@ export function ConvertToProjectModal({
   areas,
   onConverted,
 }: ConvertToProjectModalProps) {
+  const { registerOverlay, unregisterOverlay } = useOverlay();
+
   // Form state (no name input - uses taskTitle)
   const [areaId, setAreaId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,6 +56,14 @@ export function ConvertToProjectModal({
   // Custom dropdown state for area selection
   const [isAreaDropdownOpen, setIsAreaDropdownOpen] = useState(false);
   const areaDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Register overlay when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      registerOverlay('convert-to-project-modal');
+      return () => unregisterOverlay('convert-to-project-modal');
+    }
+  }, [isOpen, registerOverlay, unregisterOverlay]);
 
   // Pre-select first area when modal opens
   useEffect(() => {
