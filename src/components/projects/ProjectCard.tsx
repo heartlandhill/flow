@@ -99,10 +99,32 @@ function ActiveCard({
   const { tasks: displayedTasks, moreCount } = getDisplayedTasks(project);
 
   // Convert tasks to TaskWithRelations for TaskRow
-  // Pass project: null to avoid showing redundant project pill inside project card
-  const tasksWithRelations: TaskWithRelations[] = displayedTasks.map((task) => ({
+  // Pass project: null in displayTask to avoid showing redundant project pill inside project card
+  // But also create contextTasks with full project info for TaskDetailPanel
+  const displayTasks: TaskWithRelations[] = displayedTasks.map((task) => ({
     ...task,
     project: null,
+    reminders: [],
+  }));
+
+  // Create context tasks with full project info for TaskDetailPanel
+  const contextTasks: TaskWithRelations[] = displayedTasks.map((task) => ({
+    ...task,
+    project: {
+      id: project.id,
+      name: project.name,
+      notes: project.notes,
+      status: project.status,
+      type: project.type,
+      sort_order: project.sort_order,
+      review_interval_days: project.review_interval_days,
+      last_reviewed_at: project.last_reviewed_at,
+      next_review_date: project.next_review_date,
+      area_id: project.area_id,
+      created_at: project.created_at,
+      updated_at: project.updated_at,
+      area: project.area,
+    },
     reminders: [],
   }));
 
@@ -144,12 +166,13 @@ function ActiveCard({
       </div>
 
       {/* Task previews */}
-      {tasksWithRelations.length > 0 && (
+      {displayTasks.length > 0 && (
         <div className="-mx-2">
-          {tasksWithRelations.map((task) => (
+          {displayTasks.map((task, index) => (
             <TaskRow
               key={task.id}
               task={task}
+              contextTask={contextTasks[index]}
               onComplete={onTaskComplete}
               onSelect={onTaskSelect}
             />
