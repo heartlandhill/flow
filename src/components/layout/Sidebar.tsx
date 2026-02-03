@@ -80,6 +80,7 @@ export function Sidebar({ badgeCounts }: SidebarProps) {
                   className={`
                     group flex items-center gap-2.5 px-3 py-2 rounded-md text-[13.5px] transition-all duration-150
                     hover:bg-[var(--bg-hover)]
+                    focus:outline-none focus-visible:bg-[var(--bg-hover)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-inset
                     ${active ? 'bg-[var(--bg-selected)]' : ''}
                   `}
                 >
