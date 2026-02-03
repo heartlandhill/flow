@@ -160,7 +160,18 @@ export default async function ProjectDetailPage({
             areaColor={areaColor}
           />
         ) : (
-          <ProjectDetailList initialTasks={typedTasks} projectId={id} projectType={project.type} />
+          <>
+            <ProjectDetailList initialTasks={typedTasks} projectId={id} projectType={project.type} />
+            {/* Add Task button below task list */}
+            <div className="px-2 pt-3 pb-2">
+              <AddTaskButton
+                projectId={id}
+                projectName={project.name}
+                areaColor={areaColor}
+                variant="secondary"
+              />
+            </div>
+          </>
         )}
       </main>
     </div>
