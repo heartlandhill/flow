@@ -131,3 +131,6 @@ export interface ClarifyInput {
   project_id: string | null;
   tagIds: string[];
 }
+
+// Re-export notification types
+export type { NotificationPayload } from "@/lib/notifications/web-push";

@@ -5,6 +5,7 @@ import {
   formatNotificationBody,
   type NotificationPayload,
 } from "@/lib/notifications/web-push";
+import { sendNtfyNotification } from "@/lib/notifications/ntfy";
 
 /**
  * Request body for POST /api/notify
@@ -42,10 +43,7 @@ async function fanOutNotification(payload: NotificationPayload): Promise<void> {
     }
 
     if (sub.type === "NTFY" && sub.ntfy_topic) {
-      // NTFY integration is handled by Spec 014/015
-      // Log for debugging but don't fail
-      console.log(`NTFY notification would be sent to topic: ${sub.ntfy_topic}`);
-      return Promise.resolve();
+      return sendNtfyNotification(sub.ntfy_topic, payload);
     }
 
     // Unknown subscription type or missing fields - skip
