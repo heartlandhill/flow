@@ -6,6 +6,8 @@ import { ProjectCard } from "@/components/projects/ProjectCard";
 import { completeTask } from "@/actions/tasks";
 import { useSearch } from "@/context/SearchContext";
 import type { AreaWithProjectsAndCounts, SomedayProject } from "@/types";
+import type { AreaForModal } from "./page";
+import { EmptyState } from "./page";
 
 interface ProjectsListProps {
   /** Areas with their active projects */
@@ -14,6 +16,10 @@ interface ProjectsListProps {
   completedCountMap: Record<string, number>;
   /** Someday/Maybe projects */
   somedayProjects: SomedayProject[];
+  /** All areas for the NewProjectModal dropdown */
+  allAreas: AreaForModal[];
+  /** Whether the projects list is empty (no active or someday projects) */
+  isEmpty: boolean;
 }
 
 /**
@@ -27,7 +33,10 @@ export function ProjectsList({
   areas,
   completedCountMap,
   somedayProjects,
+  allAreas,
+  isEmpty,
 }: ProjectsListProps) {
+  // allAreas will be used by NewProjectModal in subtask-2-2
   // Track which tasks are being completed to prevent double-clicks
   const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
   // React transition for non-blocking server action calls
@@ -88,6 +97,14 @@ export function ProjectsList({
 
   // Determine Someday section default state (collapsed if >3 items)
   const somedayDefaultExpanded = somedayProjects.length <= 3;
+
+  // Show empty state when no projects exist
+  // Note: onCreateClick will be wired up in subtask-2-2
+  if (isEmpty) {
+    // Suppress unused variable warning for allAreas until subtask-2-2
+    void allAreas;
+    return <EmptyState />;
+  }
 
   return (
     <div>
