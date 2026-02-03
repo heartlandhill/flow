@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { ForecastIcon, CloseIcon } from "@/components/ui/Icons";
+import { ForecastIcon, CloseIcon, FolderPlusIcon } from "@/components/ui/Icons";
 import { updateTask, deleteTask } from "@/actions/tasks";
 import { useSelectedTask } from "@/context/SelectedTaskContext";
 import { NewProjectModal } from "@/components/projects/NewProjectModal";
+import { ConvertToProjectModal } from "@/components/tasks/ConvertToProjectModal";
 import type { TaskWithRelations, UpdateTaskInput } from "@/types";
 
 // Simplified type for project dropdown - just need id, name, and area info
@@ -164,6 +165,7 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
+  const [showConvertModal, setShowConvertModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -593,6 +595,30 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
           )}
         </div>
 
+        {/* Convert to Project button - only shown for inbox tasks in display mode */}
+        {!isEditing && task.inbox && (
+          <div className="flex flex-col gap-1">
+            <button
+              type="button"
+              onClick={() => setShowConvertModal(true)}
+              className={`
+                inline-flex items-center gap-2 px-3 py-2 w-fit
+                text-[14px] font-medium
+                text-[var(--text-secondary)]
+                bg-[var(--bg-surface)]
+                border border-[var(--border)]
+                rounded-[6px]
+                transition-all duration-150
+                hover:border-[var(--text-tertiary)] hover:text-[var(--text-primary)]
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
+              `}
+            >
+              <FolderPlusIcon size={16} className="flex-shrink-0" />
+              Convert to Project
+            </button>
+          </div>
+        )}
+
         {/* Notes field */}
         {isEditing ? (
           // Edit mode: show editable textarea with auto-grow
@@ -850,6 +876,19 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
         onCreated={(projectId) => {
           setEditedProjectId(projectId);
           setShowNewProjectModal(false);
+        }}
+      />
+
+      {/* Convert to Project Modal */}
+      <ConvertToProjectModal
+        isOpen={showConvertModal}
+        onClose={() => setShowConvertModal(false)}
+        taskId={task.id}
+        taskTitle={task.title}
+        areas={areasWithProjects.map((a) => ({ id: a.id, name: a.name, color: a.color }))}
+        onConverted={() => {
+          // Task no longer exists after conversion - close the detail panel
+          clearSelectedTask();
         }}
       />
     </div>
