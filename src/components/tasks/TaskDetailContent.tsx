@@ -159,7 +159,7 @@ function getAreaColor(areaColor: string | null | undefined): string {
  * Shared between mobile bottom sheet and desktop side panel.
  */
 export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], allTags = [] }: TaskDetailContentProps) {
-  const { clearSelectedTask } = useSelectedTask();
+  const { clearSelectedTask, updateSelectedTask } = useSelectedTask();
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -313,10 +313,12 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
 
       const result = await updateTask(task.id, updateData);
 
-      if (result.success) {
-        // Exit edit mode on success - the view will refresh via revalidatePath
+      if (result.success && result.data) {
+        // Update the selected task in context with the returned data
+        updateSelectedTask(result.data);
+        // Exit edit mode on success
         setIsEditing(false);
-      } else {
+      } else if (!result.success) {
         setError(result.error || "Failed to save task");
       }
     } catch {
@@ -333,6 +335,7 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
     editedTagIds,
     task.id,
     isSubmitting,
+    updateSelectedTask,
   ]);
 
   // Handle overlay click for delete confirmation dialog
