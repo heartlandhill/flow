@@ -108,7 +108,7 @@ export default async function ForecastPage() {
       </section>
 
       {/* Task list or empty state */}
-      <main className="flex-1 px-2 md:px-4 pb-24 md:pb-6 overflow-y-auto">
+      <main className="flex-1 px-2 md:px-4 pb-24 md:pb-6 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {typedTasks.length === 0 ? (
           <EmptyState />
         ) : (

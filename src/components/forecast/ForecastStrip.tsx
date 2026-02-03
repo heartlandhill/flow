@@ -38,16 +38,7 @@ function getDotColor(task: TaskWithRelations): string {
 export function ForecastStrip({ dates, tasksByDate }: ForecastStripProps) {
   return (
     <div
-      className={`
-        /* Mobile: horizontal scroll with hidden scrollbar */
-        flex gap-2 overflow-x-auto
-        [scrollbar-width:none]
-        [-webkit-overflow-scrolling:touch]
-        [&::-webkit-scrollbar]:hidden
-
-        /* Desktop: 7-column grid */
-        md:grid md:grid-cols-7 md:gap-2 md:overflow-visible
-      `}
+      className="flex gap-2 overflow-x-auto [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-7 md:gap-2 md:overflow-visible"
     >
       {dates.map((date) => {
         const dateKey = getDateKey(date);
@@ -95,48 +86,30 @@ function DateCell({ date, tasks, isToday }: DateCellProps) {
   return (
     <div
       className={`
-        /* Base cell styling */
         flex flex-col items-center justify-center
         py-3 rounded-lg
         transition-colors duration-150
-
-        /* Mobile: fixed 60px width */
-        w-[60px] min-w-[60px]
-
-        /* Desktop: expand to fill grid cell */
-        md:w-auto md:min-w-0
-
-        /* Consistent 2px border for all cells to prevent layout shift */
+        w-[60px] min-w-[60px] shrink-0
+        md:w-auto md:min-w-0 md:shrink
         border-2
-
-        /* Today styling: accent border + tinted background */
         ${isToday
           ? "border-[var(--accent)] bg-[rgba(232,168,124,0.08)]"
           : "border-transparent bg-[var(--bg-surface)]"
         }
       `}
     >
-      {/* Day name: 10px uppercase, accent color for today */}
       <span
-        className={`
-          text-[10px] font-medium uppercase leading-none
-          ${isToday ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}
-        `}
+        className={`text-[10px] font-medium uppercase leading-none ${isToday ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}
       >
         {dayName}
       </span>
 
-      {/* Day number: 18px, accent color + bold for today */}
       <span
-        className={`
-          text-[18px] leading-tight mt-1
-          ${isToday ? "text-[var(--accent)] font-semibold" : "text-[var(--text-primary)] font-normal"}
-        `}
+        className={`text-[18px] leading-tight mt-1 ${isToday ? "text-[var(--accent)] font-semibold" : "text-[var(--text-primary)] font-normal"}`}
       >
         {dayNumber}
       </span>
 
-      {/* Task dots: max 3, 6px each */}
       <div className="flex items-center gap-1 mt-2 h-[6px]">
         {dotColors.map((color, index) => (
           <span
