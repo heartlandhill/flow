@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { ForecastIcon } from "@/components/ui/Icons";
+import { ForecastIcon, CloseIcon } from "@/components/ui/Icons";
 import type { TaskWithRelations } from "@/types";
 
 // Simplified type for project dropdown - just need id, name, and area info
@@ -150,10 +150,18 @@ function getAreaColor(areaColor: string | null | undefined): string {
 export function TaskDetailContent({ task, onEditClick, areasWithProjects = [] }: TaskDetailContentProps) {
   const [isEditing, setIsEditing] = useState(false);
 
+  // Helper to convert Date to YYYY-MM-DD string for input type="date"
+  const dateToInputString = (date: Date | null): string => {
+    if (!date) return "";
+    return date.toISOString().split("T")[0];
+  };
+
   // Form state for edit mode - pre-filled with current values
   const [editedTitle, setEditedTitle] = useState(task.title);
   const [editedNotes, setEditedNotes] = useState(task.notes || "");
   const [editedProjectId, setEditedProjectId] = useState<string | null>(task.project_id);
+  const [editedDueDate, setEditedDueDate] = useState(dateToInputString(task.due_date));
+  const [editedDeferDate, setEditedDeferDate] = useState(dateToInputString(task.defer_date));
 
   // Ref for notes textarea auto-grow
   const notesTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -190,6 +198,8 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [] }:
     setEditedTitle(task.title);
     setEditedNotes(task.notes || "");
     setEditedProjectId(task.project_id);
+    setEditedDueDate(dateToInputString(task.due_date));
+    setEditedDeferDate(dateToInputString(task.defer_date));
     setIsEditing(true);
     onEditClick?.();
   };
@@ -200,6 +210,8 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [] }:
     setEditedTitle(task.title);
     setEditedNotes(task.notes || "");
     setEditedProjectId(task.project_id);
+    setEditedDueDate(dateToInputString(task.due_date));
+    setEditedDeferDate(dateToInputString(task.defer_date));
     setIsEditing(false);
   };
 
@@ -309,7 +321,26 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [] }:
           <span className="text-[12px] font-medium text-[var(--text-tertiary)] uppercase tracking-wide">
             Due Date
           </span>
-          {dueDateInfo ? (
+          {isEditing ? (
+            // Edit mode: show date input with clearable X button
+            <div className="relative w-fit min-w-[160px]">
+              <input
+                type="date"
+                value={editedDueDate}
+                onChange={(e) => setEditedDueDate(e.target.value)}
+                className="w-full px-3 py-2 pr-8 rounded-[6px] bg-[var(--bg-surface)] border border-[var(--border)] text-[14px] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+              />
+              {editedDueDate && (
+                <button
+                  type="button"
+                  onClick={() => setEditedDueDate("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+                >
+                  <CloseIcon size={14} />
+                </button>
+              )}
+            </div>
+          ) : dueDateInfo ? (
             <span
               className={`
                 inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[13px] font-medium w-fit
@@ -326,21 +357,42 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [] }:
           )}
         </div>
 
-        {/* Defer date field - only shown if present */}
-        {deferDateInfo && (
+        {/* Defer date field - always shown in edit mode, only shown if present in display mode */}
+        {(isEditing || deferDateInfo) && (
           <div className="flex flex-col gap-1">
             <span className="text-[12px] font-medium text-[var(--text-tertiary)] uppercase tracking-wide">
               Deferred Until
             </span>
-            <span
-              className={`
-                inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[13px] font-medium w-fit
-                ${deferDateInfo.textColor} ${deferDateInfo.bgColor}
-              `}
-            >
-              <ForecastIcon size={14} className="flex-shrink-0" />
-              {deferDateInfo.label}
-            </span>
+            {isEditing ? (
+              // Edit mode: show date input with clearable X button
+              <div className="relative w-fit min-w-[160px]">
+                <input
+                  type="date"
+                  value={editedDeferDate}
+                  onChange={(e) => setEditedDeferDate(e.target.value)}
+                  className="w-full px-3 py-2 pr-8 rounded-[6px] bg-[var(--bg-surface)] border border-[var(--border)] text-[14px] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+                />
+                {editedDeferDate && (
+                  <button
+                    type="button"
+                    onClick={() => setEditedDeferDate("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+                  >
+                    <CloseIcon size={14} />
+                  </button>
+                )}
+              </div>
+            ) : deferDateInfo ? (
+              <span
+                className={`
+                  inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[13px] font-medium w-fit
+                  ${deferDateInfo.textColor} ${deferDateInfo.bgColor}
+                `}
+              >
+                <ForecastIcon size={14} className="flex-shrink-0" />
+                {deferDateInfo.label}
+              </span>
+            ) : null}
           </div>
         )}
 
