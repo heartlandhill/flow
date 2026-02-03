@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { EditProjectModal } from "@/components/projects/EditProjectModal";
 import type { ProjectStatus, ProjectType } from "@/types";
 
@@ -49,6 +50,8 @@ export function ProjectDetailHeader({
   area,
   areas,
 }: ProjectDetailHeaderProps) {
+  const router = useRouter();
+
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -60,6 +63,11 @@ export function ProjectDetailHeader({
   const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
   }, []);
+
+  // Handle project deletion - navigate back to projects list
+  const handleDeleted = useCallback(() => {
+    router.push("/projects");
+  }, [router]);
 
   // Get area color with fallback
   const areaColor = area.color || "var(--accent)";
@@ -130,6 +138,7 @@ export function ProjectDetailHeader({
         onClose={handleCloseModal}
         project={project}
         areas={areas}
+        onDeleted={handleDeleted}
       />
     </>
   );
