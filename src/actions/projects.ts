@@ -25,12 +25,12 @@ interface CreateProjectInput {
  */
 interface UpdateProjectInput {
   name?: string;
-  notes?: string;
+  notes?: string | null;
   status?: ProjectStatus;
   type?: ProjectType;
   areaId?: string;
   sortOrder?: number;
-  reviewIntervalDays?: number;
+  reviewIntervalDays?: number | null;
   lastReviewedAt?: Date;
   nextReviewDate?: Date;
 }

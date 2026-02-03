@@ -2,7 +2,17 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { ProjectDetailList } from "./ProjectDetailList";
+import { ProjectDetailHeader } from "./ProjectDetailHeader";
 import type { TaskWithRelations } from "@/types";
+
+/**
+ * Area type for the header (minimal - just what we need for display and modal)
+ */
+interface AreaForHeader {
+  id: string;
+  name: string;
+  color: string;
+}
 
 interface ProjectDetailPageProps {
   params: Promise<{ id: string }>;
@@ -65,6 +75,17 @@ export default async function ProjectDetailPage({
     },
   });
 
+  // Query all areas for the EditProjectModal dropdown
+  const allAreasRaw = await prisma.area.findMany({
+    orderBy: { sort_order: "asc" },
+    select: {
+      id: true,
+      name: true,
+      color: true,
+    },
+  });
+  const allAreas = allAreasRaw as AreaForHeader[];
+
   // Calculate progress
   const totalTasks = project._count.tasks;
   const incompleteTasks = project.tasks.length;
@@ -103,26 +124,25 @@ export default async function ProjectDetailPage({
           Projects
         </Link>
 
-        {/* Project name and area badge */}
-        <div className="flex items-center gap-3 mb-3">
-          <h1 className="font-display text-[26px] md:text-[28px] font-medium text-[var(--text-primary)]">
-            {project.name}
-          </h1>
-
-          {/* Area badge */}
-          <span
-            className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium"
-            style={{
-              backgroundColor: `${areaColor}20`,
-              color: areaColor,
+        {/* Project name, area badge, and Edit button */}
+        <div className="mb-3">
+          <ProjectDetailHeader
+            project={{
+              id: project.id,
+              name: project.name,
+              notes: project.notes,
+              status: project.status,
+              type: project.type,
+              area_id: project.area_id,
+              review_interval_days: project.review_interval_days,
             }}
-          >
-            <span
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ backgroundColor: areaColor }}
-            />
-            {project.area.name}
-          </span>
+            area={{
+              id: project.area.id,
+              name: project.area.name,
+              color: project.area.color,
+            }}
+            areas={allAreas}
+          />
         </div>
 
         {/* Progress bar */}
@@ -148,7 +168,7 @@ export default async function ProjectDetailPage({
         {typedTasks.length === 0 ? (
           <EmptyState hasCompletedTasks={totalTasks > 0} />
         ) : (
-          <ProjectDetailList initialTasks={typedTasks} projectType={project.type} />
+          <ProjectDetailList initialTasks={typedTasks} />
         )}
       </main>
     </div>
