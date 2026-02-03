@@ -1,8 +1,11 @@
 'use client';
 
-import { SearchIcon } from '@/components/ui/Icons';
+import { SearchIcon, CloseIcon } from '@/components/ui/Icons';
+import { useSearch } from '@/context/SearchContext';
 
 export function TopBar() {
+  const { query, setQuery, clearQuery } = useSearch();
+
   return (
     <header className="h-14 bg-transparent border-b border-[var(--border)] flex items-center justify-between px-6">
       {/* Search Input */}
@@ -14,8 +17,20 @@ export function TopBar() {
         <input
           type="text"
           placeholder="Search..."
-          className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-md pl-10 pr-4 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent transition-all"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="w-full bg-[var(--bg-surface)] border border-[var(--border)] rounded-md pl-10 pr-10 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent transition-all"
         />
+        {query && (
+          <button
+            type="button"
+            onClick={clearQuery}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+            aria-label="Clear search"
+          >
+            <CloseIcon size={16} />
+          </button>
+        )}
       </div>
 
       {/* User Avatar */}

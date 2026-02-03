@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useCallback, useTransition } from "react";
+import { useState, useCallback, useTransition, useMemo } from "react";
 import { AreaGroup } from "@/components/projects/AreaGroup";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { completeTask } from "@/actions/tasks";
+import { useSearch } from "@/context/SearchContext";
 import type { AreaWithProjectsAndCounts, SomedayProject } from "@/types";
 
 interface ProjectsListProps {
@@ -31,6 +32,26 @@ export function ProjectsList({
   const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
   // React transition for non-blocking server action calls
   const [, startTransition] = useTransition();
+  // Search context for filtering
+  const { query } = useSearch();
+
+  // Filter tasks within projects based on search query
+  const filteredAreas = useMemo(() => {
+    if (!query.trim()) return areas;
+
+    const lowerQuery = query.toLowerCase();
+    return areas.map((area) => ({
+      ...area,
+      projects: area.projects.map((project) => ({
+        ...project,
+        tasks: project.tasks.filter((task) =>
+          task.title.toLowerCase().includes(lowerQuery)
+        ),
+      })),
+    }));
+  }, [areas, query]);
+
+  const isSearchActive = query.trim().length > 0;
 
   // Handler for task completion
   const handleTaskComplete = useCallback(
@@ -70,8 +91,15 @@ export function ProjectsList({
 
   return (
     <div>
+      {/* Search results indicator */}
+      {isSearchActive && (
+        <div className="px-4 py-2 text-sm text-[var(--text-secondary)]">
+          Showing results for &apos;{query}&apos;
+        </div>
+      )}
+
       {/* Active projects grouped by area */}
-      {areas.map((area) => (
+      {filteredAreas.map((area) => (
         <AreaGroup
           key={area.id}
           name={area.name}
@@ -79,16 +107,28 @@ export function ProjectsList({
           projectCount={area.projects.length}
           defaultExpanded={true}
         >
-          {area.projects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              completedCount={completedCountMap[project.id] || 0}
-              onTaskComplete={handleTaskComplete}
-              onTaskSelect={handleTaskSelect}
-              variant="active"
-            />
-          ))}
+          {area.projects.map((project) => {
+            // Check if this project has matching tasks during search
+            const hasMatchingTasks = project.tasks.length > 0;
+
+            return (
+              <div key={project.id}>
+                <ProjectCard
+                  project={project}
+                  completedCount={completedCountMap[project.id] || 0}
+                  onTaskComplete={handleTaskComplete}
+                  onTaskSelect={handleTaskSelect}
+                  variant="active"
+                />
+                {/* Empty state when search is active but no tasks match */}
+                {isSearchActive && !hasMatchingTasks && (
+                  <div className="px-4 py-2 text-sm text-[var(--text-secondary)] -mt-2 mb-2">
+                    No tasks matching &apos;{query}&apos;
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </AreaGroup>
       ))}
 

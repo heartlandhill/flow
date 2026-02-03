@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback, useTransition } from "react";
+import { useState, useCallback, useTransition, useMemo } from "react";
 import { TaskRow } from "@/components/tasks/TaskRow";
 import { completeTask } from "@/actions/tasks";
+import { useSearch } from "@/context/SearchContext";
 import type { TaskWithRelations } from "@/types";
 
 interface InboxListProps {
@@ -11,7 +12,7 @@ interface InboxListProps {
 
 /**
  * Client component for the inbox task list.
- * Manages optimistic UI updates for task completion.
+ * Manages optimistic UI updates for task completion and search filtering.
  */
 export function InboxList({ initialTasks }: InboxListProps) {
   // Local state for optimistic updates
@@ -20,6 +21,18 @@ export function InboxList({ initialTasks }: InboxListProps) {
   const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
   // React transition for non-blocking server action calls
   const [isPending, startTransition] = useTransition();
+  // Search context for filtering
+  const { query } = useSearch();
+
+  // Filter tasks based on search query
+  const filteredTasks = useMemo(() => {
+    if (!query.trim()) return tasks;
+    return tasks.filter((t) =>
+      t.title.toLowerCase().includes(query.toLowerCase())
+    );
+  }, [tasks, query]);
+
+  const isSearchActive = query.trim().length > 0;
 
   const handleComplete = useCallback(
     (taskId: string) => {
@@ -72,13 +85,30 @@ export function InboxList({ initialTasks }: InboxListProps) {
     // For now, this is a placeholder for the click handler
   }, []);
 
+  // If no tasks at all (not due to search), return null
   if (tasks.length === 0) {
     return null;
   }
 
+  // If search is active but no results
+  if (isSearchActive && filteredTasks.length === 0) {
+    return (
+      <div className="flex flex-col">
+        <div className="px-4 py-2 text-sm text-[var(--text-secondary)]">
+          No tasks matching &apos;{query}&apos;
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col">
-      {tasks.map((task) => (
+      {isSearchActive && (
+        <div className="px-4 py-2 text-sm text-[var(--text-secondary)]">
+          Showing results for &apos;{query}&apos;
+        </div>
+      )}
+      {filteredTasks.map((task) => (
         <TaskRow
           key={task.id}
           task={task}
