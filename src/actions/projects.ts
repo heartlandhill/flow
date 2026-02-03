@@ -226,3 +226,57 @@ export async function markProjectReviewed(
     return { success: false, error: "Failed to mark project as reviewed" };
   }
 }
+
+/**
+ * Server action to delete a project.
+ * Orphans all tasks belonging to the project (sets project_id = null) rather than deleting them.
+ * Orphaned tasks will appear in the inbox since they have no project assignment.
+ * Uses a transaction to ensure atomic orphan + delete operations.
+ */
+export async function deleteProject(id: string): Promise<ActionResult> {
+  try {
+    // Validate project ID
+    if (!id || typeof id !== "string") {
+      return { success: false, error: "Project ID is required" };
+    }
+
+    // Verify project exists
+    const project = await prisma.project.findUnique({
+      where: { id },
+    });
+
+    if (!project) {
+      return { success: false, error: "Project not found" };
+    }
+
+    // Use transaction to orphan tasks and delete project atomically
+    await prisma.$transaction(async (tx) => {
+      // Orphan all tasks belonging to this project (set project_id = null)
+      // This preserves task history while removing the project association
+      await tx.task.updateMany({
+        where: { project_id: id },
+        data: { project_id: null },
+      });
+
+      // Delete the project
+      await tx.project.delete({
+        where: { id },
+      });
+    });
+
+    // Revalidate all views that show projects or tasks
+    revalidatePath("/projects");
+    revalidatePath("/inbox");
+    revalidatePath("/today");
+    revalidatePath("/forecast");
+    revalidatePath("/review");
+    revalidatePath("/tags");
+    // Revalidate layout to update navigation badge counts
+    revalidatePath("/", "layout");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Delete project error:", error);
+    return { success: false, error: "Failed to delete project" };
+  }
+}
