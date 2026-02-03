@@ -126,7 +126,7 @@ export function Sidebar({ badgeCounts }: SidebarProps) {
       <div className="px-3 py-4">
         <button
           type="button"
-          onClick={open}
+          onClick={() => open()}
           className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-[var(--border)] rounded-md text-[var(--text-secondary)] hover:border-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
         >
           <PlusIcon size={16} />

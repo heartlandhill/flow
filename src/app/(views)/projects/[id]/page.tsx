@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { ProjectDetailList } from "./ProjectDetailList";
 import { ProjectDetailHeader } from "./ProjectDetailHeader";
+import { AddTaskButton } from "./AddTaskButton";
 import type { TaskWithRelations } from "@/types";
 
 interface ProjectDetailPageProps {
@@ -152,9 +153,25 @@ export default async function ProjectDetailPage({
       {/* Task list or empty state */}
       <main className="flex-1 px-2 md:px-4 pb-24 md:pb-6 overflow-y-auto">
         {typedTasks.length === 0 ? (
-          <EmptyState hasCompletedTasks={totalTasks > 0} />
+          <EmptyState
+            hasCompletedTasks={totalTasks > 0}
+            projectId={id}
+            projectName={project.name}
+            areaColor={areaColor}
+          />
         ) : (
-          <ProjectDetailList initialTasks={typedTasks} projectId={id} projectType={project.type} />
+          <>
+            <ProjectDetailList initialTasks={typedTasks} projectId={id} projectType={project.type} />
+            {/* Add Task button below task list */}
+            <div className="px-2 pt-3 pb-2">
+              <AddTaskButton
+                projectId={id}
+                projectName={project.name}
+                areaColor={areaColor}
+                variant="secondary"
+              />
+            </div>
+          </>
         )}
       </main>
     </div>
@@ -163,13 +180,22 @@ export default async function ProjectDetailPage({
 
 interface EmptyStateProps {
   hasCompletedTasks: boolean;
+  projectId: string;
+  projectName: string;
+  areaColor: string;
 }
 
 /**
  * Empty state displayed when project has no incomplete tasks.
  * Shows different messages for empty projects vs all tasks completed.
+ * Includes an Add Task button to create tasks directly in the project.
  */
-function EmptyState({ hasCompletedTasks }: EmptyStateProps) {
+function EmptyState({
+  hasCompletedTasks,
+  projectId,
+  projectName,
+  areaColor,
+}: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center py-12 px-5 text-center">
       {hasCompletedTasks ? (
@@ -177,7 +203,7 @@ function EmptyState({ hasCompletedTasks }: EmptyStateProps) {
           <span className="text-[32px] mb-2.5" role="img" aria-label="Checkmark">
             ✓
           </span>
-          <p className="text-[14px] text-[var(--text-tertiary)]">
+          <p className="text-[14px] text-[var(--text-tertiary)] mb-4">
             All tasks complete — nice work!
           </p>
         </>
@@ -186,11 +212,17 @@ function EmptyState({ hasCompletedTasks }: EmptyStateProps) {
           <span className="text-[32px] mb-2.5" role="img" aria-label="Clipboard">
             📋
           </span>
-          <p className="text-[14px] text-[var(--text-tertiary)]">
+          <p className="text-[14px] text-[var(--text-tertiary)] mb-4">
             No tasks yet — add one to get started
           </p>
         </>
       )}
+      <AddTaskButton
+        projectId={projectId}
+        projectName={projectName}
+        areaColor={areaColor}
+        variant="primary"
+      />
     </div>
   );
 }

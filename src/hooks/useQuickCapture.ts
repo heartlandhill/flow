@@ -12,7 +12,10 @@ import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 
 interface QuickCaptureContextValue {
   isOpen: boolean;
-  open: () => void;
+  projectId: string | null;
+  projectName: string | null;
+  areaColor: string | null;
+  open: (projectId?: string, projectName?: string, areaColor?: string) => void;
   close: () => void;
 }
 
@@ -24,13 +27,22 @@ interface QuickCaptureProviderProps {
 
 export function QuickCaptureProvider({ children }: QuickCaptureProviderProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [projectName, setProjectName] = useState<string | null>(null);
+  const [areaColor, setAreaColor] = useState<string | null>(null);
 
-  const open = useCallback(() => {
+  const open = useCallback((projectId?: string, projectName?: string, areaColor?: string) => {
+    setProjectId(projectId ?? null);
+    setProjectName(projectName ?? null);
+    setAreaColor(areaColor ?? null);
     setIsOpen(true);
   }, []);
 
   const close = useCallback(() => {
     setIsOpen(false);
+    setProjectId(null);
+    setProjectName(null);
+    setAreaColor(null);
   }, []);
 
   // Wire up global keyboard shortcuts
@@ -42,7 +54,7 @@ export function QuickCaptureProvider({ children }: QuickCaptureProviderProps) {
 
   return createElement(
     QuickCaptureContext.Provider,
-    { value: { isOpen, open, close } },
+    { value: { isOpen, projectId, projectName, areaColor, open, close } },
     children
   );
 }

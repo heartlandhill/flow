@@ -37,6 +37,58 @@ export async function createTask(title: string): Promise<ActionResult<Task>> {
 }
 
 /**
+ * Server action to create a new task directly within a project.
+ * Sets inbox = false and project_id to the specified project.
+ * Validates that the project exists before creating the task.
+ */
+export async function createTaskInProject(
+  title: string,
+  projectId: string
+): Promise<ActionResult<Task>> {
+  try {
+    // Validate title input
+    if (!title || typeof title !== "string" || title.trim().length === 0) {
+      return { success: false, error: "Task title is required" };
+    }
+
+    // Validate project ID input
+    if (!projectId || typeof projectId !== "string") {
+      return { success: false, error: "Project ID is required" };
+    }
+
+    // Verify the project exists
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+    });
+
+    if (!project) {
+      return { success: false, error: "Project not found" };
+    }
+
+    const task = await prisma.task.create({
+      data: {
+        title: title.trim(),
+        inbox: false,
+        completed: false,
+        project_id: projectId,
+      },
+    });
+
+    // Revalidate project detail page to show new task
+    revalidatePath(`/projects/${projectId}`);
+    // Revalidate projects list (task counts may update)
+    revalidatePath("/projects");
+    // Revalidate layout to update navigation badge counts
+    revalidatePath("/", "layout");
+
+    return { success: true, data: task };
+  } catch (error) {
+    console.error("Create task in project error:", error);
+    return { success: false, error: "Failed to create task in project" };
+  }
+}
+
+/**
  * Server action to mark a task as completed.
  * Sets completed = true and completed_at = now().
  * Also cancels all pending/snoozed reminders for the task.
