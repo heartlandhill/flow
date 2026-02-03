@@ -43,18 +43,24 @@ export function SortableTaskRow({
       style={style}
       className={`
         group relative flex items-center
+        /* Add left padding on mobile to make room for visible drag handle */
+        pl-7 md:pl-0
         ${isDragging ? "opacity-50 z-50" : "opacity-100"}
       `}
       // Set touch-action for proper mobile handling
       {...attributes}
     >
-      {/* Drag handle - only visible on hover/focus, listeners attached here */}
+      {/* Drag handle - visible on mobile, hover-to-reveal on desktop */}
       <button
         ref={setActivatorNodeRef}
         {...listeners}
         type="button"
         className={`
-          absolute left-0 top-1/2 -translate-y-1/2 -translate-x-6
+          absolute top-1/2 -translate-y-1/2
+          /* Mobile: positioned inside the left padding area */
+          left-1
+          /* Desktop: positioned outside to the left, revealed on hover */
+          md:left-0 md:-translate-x-6
           p-1 rounded
           cursor-grab
           text-[var(--text-tertiary)]
