@@ -35,7 +35,7 @@ export default async function InboxPage() {
   const typedTasks = tasks as TaskWithRelations[];
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full view-content">
       {/* Header */}
       <header className="flex items-baseline gap-3 px-4 pt-6 pb-4 md:px-6 md:pt-8 md:pb-5">
         <h1 className="font-display text-[26px] md:text-[28px] font-medium text-[var(--text-primary)]">
