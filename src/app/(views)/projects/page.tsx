@@ -7,12 +7,30 @@ import type {
 } from "@/types";
 
 /**
+ * Minimal area type for NewProjectModal (id, name, color only)
+ */
+export interface AreaForModal {
+  id: string;
+  name: string;
+  color: string;
+}
+
+/**
+ * Props for EmptyState component
+ */
+export interface EmptyStateProps {
+  /** Callback when "Create Project" button is clicked */
+  onCreateClick?: () => void;
+}
+
+/**
  * Projects page - displays all active projects grouped by area of responsibility.
  *
  * This is a server component that fetches data directly via Prisma:
  * 1. Areas with their active projects and incomplete tasks
  * 2. Completed task counts per project (for progress bars)
  * 3. Someday/Maybe projects
+ * 4. All areas (for the NewProjectModal)
  */
 export default async function ProjectsPage() {
   // Query 1: Areas with active projects and incomplete tasks
@@ -67,10 +85,21 @@ export default async function ProjectsPage() {
     },
   });
 
+  // Query 4: All areas for the NewProjectModal dropdown
+  const allAreasRaw = await prisma.area.findMany({
+    orderBy: { sort_order: "asc" },
+    select: {
+      id: true,
+      name: true,
+      color: true,
+    },
+  });
+
   // Type cast results
   const areas = areasRaw as AreaWithProjectsAndCounts[];
   const completedCounts = completedCountsRaw as CompletedCountResult[];
   const somedayProjects = somedayProjectsRaw as SomedayProject[];
+  const allAreas = allAreasRaw as AreaForModal[];
 
   // Build a map of project ID -> completed count for easy lookup
   const completedCountMap: Record<string, number> = {};
@@ -108,15 +137,13 @@ export default async function ProjectsPage() {
 
       {/* Main content */}
       <main className="flex-1 px-4 md:px-6 pb-24 md:pb-6 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {!hasAnyContent ? (
-          <EmptyState />
-        ) : (
-          <ProjectsList
-            areas={areasWithProjects}
-            completedCountMap={completedCountMap}
-            somedayProjects={somedayProjects}
-          />
-        )}
+        <ProjectsList
+          areas={areasWithProjects}
+          completedCountMap={completedCountMap}
+          somedayProjects={somedayProjects}
+          allAreas={allAreas}
+          isEmpty={!hasAnyContent}
+        />
       </main>
     </div>
   );
@@ -124,16 +151,36 @@ export default async function ProjectsPage() {
 
 /**
  * Empty state displayed when there are no projects.
+ * Exported for use by ProjectsList client component.
  */
-function EmptyState() {
+export function EmptyState({ onCreateClick }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center py-12 px-5 text-center">
       <span className="text-[32px] mb-2.5" role="img" aria-label="Folder">
         📁
       </span>
-      <p className="text-[14px] text-[var(--text-tertiary)]">
+      <p className="text-[14px] text-[var(--text-tertiary)] mb-4">
         No projects yet — create one to get started
       </p>
+      {onCreateClick && (
+        <button
+          type="button"
+          onClick={onCreateClick}
+          className={`
+            px-4 py-2
+            text-[14px] font-medium
+            text-[var(--bg-root)]
+            bg-[var(--accent)]
+            rounded-md
+            transition-all duration-150
+            hover:opacity-90
+            active:scale-[0.98] active:brightness-90
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2
+          `}
+        >
+          Create Project
+        </button>
+      )}
     </div>
   );
 }

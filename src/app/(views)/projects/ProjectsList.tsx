@@ -3,9 +3,13 @@
 import { useState, useCallback, useTransition, useMemo } from "react";
 import { AreaGroup } from "@/components/projects/AreaGroup";
 import { ProjectCard } from "@/components/projects/ProjectCard";
+import { NewProjectModal } from "@/components/projects/NewProjectModal";
 import { completeTask } from "@/actions/tasks";
 import { useSearch } from "@/context/SearchContext";
+import { PlusIcon } from "@/components/ui/Icons";
 import type { AreaWithProjectsAndCounts, SomedayProject } from "@/types";
+import type { AreaForModal } from "./page";
+import { EmptyState } from "./page";
 
 interface ProjectsListProps {
   /** Areas with their active projects */
@@ -14,6 +18,10 @@ interface ProjectsListProps {
   completedCountMap: Record<string, number>;
   /** Someday/Maybe projects */
   somedayProjects: SomedayProject[];
+  /** All areas for the NewProjectModal dropdown */
+  allAreas: AreaForModal[];
+  /** Whether the projects list is empty (no active or someday projects) */
+  isEmpty: boolean;
 }
 
 /**
@@ -27,13 +35,26 @@ export function ProjectsList({
   areas,
   completedCountMap,
   somedayProjects,
+  allAreas,
+  isEmpty,
 }: ProjectsListProps) {
+  // Modal state for NewProjectModal
+  const [isModalOpen, setIsModalOpen] = useState(false);
   // Track which tasks are being completed to prevent double-clicks
   const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
   // React transition for non-blocking server action calls
   const [, startTransition] = useTransition();
   // Search context for filtering
   const { query } = useSearch();
+
+  // Modal handlers
+  const handleOpenModal = useCallback(() => {
+    setIsModalOpen(true);
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false);
+  }, []);
 
   // Filter tasks within projects based on search query
   const filteredAreas = useMemo(() => {
@@ -89,8 +110,45 @@ export function ProjectsList({
   // Determine Someday section default state (collapsed if >3 items)
   const somedayDefaultExpanded = somedayProjects.length <= 3;
 
+  // Show empty state when no projects exist
+  if (isEmpty) {
+    return (
+      <>
+        <EmptyState onCreateClick={handleOpenModal} />
+        <NewProjectModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          areas={allAreas}
+        />
+      </>
+    );
+  }
+
   return (
     <div>
+      {/* Action header with New Project button */}
+      <div className="flex justify-end mb-4">
+        <button
+          type="button"
+          onClick={handleOpenModal}
+          className={`
+            flex items-center gap-1.5
+            px-3 py-1.5
+            text-[14px] font-medium
+            text-[var(--accent)]
+            bg-transparent
+            rounded-md
+            transition-all duration-150
+            hover:bg-[rgba(232,168,124,0.12)]
+            active:scale-[0.98]
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2
+          `}
+        >
+          <PlusIcon size={16} />
+          <span>New Project</span>
+        </button>
+      </div>
+
       {/* Search results indicator */}
       {isSearchActive && (
         <div className="px-4 py-2 text-sm text-[var(--text-secondary)]">
@@ -145,6 +203,13 @@ export function ProjectsList({
           />
         </>
       )}
+
+      {/* New Project Modal */}
+      <NewProjectModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        areas={allAreas}
+      />
     </div>
   );
 }
