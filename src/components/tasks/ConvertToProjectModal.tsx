@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
-import { ChevronIcon } from "@/components/ui/Icons";
+import { useState, useCallback, useEffect } from "react";
 import { convertTaskToProject } from "@/actions/tasks";
 import { useOverlay } from "@/context/OverlayContext";
 
@@ -53,10 +52,6 @@ export function ConvertToProjectModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Custom dropdown state for area selection
-  const [isAreaDropdownOpen, setIsAreaDropdownOpen] = useState(false);
-  const areaDropdownRef = useRef<HTMLDivElement>(null);
-
   // Register overlay when modal is open
   useEffect(() => {
     if (isOpen) {
@@ -78,8 +73,6 @@ export function ConvertToProjectModal({
   // Clear state when modal closes
   useEffect(() => {
     if (!isOpen) {
-      // Close dropdown immediately
-      setIsAreaDropdownOpen(false);
       // Delay clearing form fields to allow close animation
       const timer = setTimeout(() => {
         setAreaId("");
@@ -95,35 +88,13 @@ export function ConvertToProjectModal({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        // Close area dropdown first if open, otherwise close modal
-        if (isAreaDropdownOpen) {
-          setIsAreaDropdownOpen(false);
-        } else {
-          onClose();
-        }
+        onClose();
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose, isAreaDropdownOpen]);
-
-  // Handle click outside to close area dropdown
-  useEffect(() => {
-    if (!isAreaDropdownOpen) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        areaDropdownRef.current &&
-        !areaDropdownRef.current.contains(e.target as Node)
-      ) {
-        setIsAreaDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isAreaDropdownOpen]);
+  }, [isOpen, onClose]);
 
   const handleOverlayClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -158,15 +129,6 @@ export function ConvertToProjectModal({
       setIsSubmitting(false);
     }
   }, [taskId, areaId, isSubmitting, onClose, onConverted]);
-
-  // Handle area selection from custom dropdown
-  const handleAreaSelect = useCallback((selectedAreaId: string) => {
-    setAreaId(selectedAreaId);
-    setIsAreaDropdownOpen(false);
-  }, []);
-
-  // Get currently selected area for display
-  const selectedArea = areas.find((area) => area.id === areaId);
 
   // Handle Enter key to submit
   const handleKeyDown = useCallback(
@@ -260,94 +222,45 @@ export function ConvertToProjectModal({
             </div>
           </div>
 
-          {/* Area Select - Custom dropdown with colored dots */}
+          {/* Area Select - Pill grid (single-select) */}
           <div>
             <label className="block text-[12px] font-medium text-[var(--text-secondary)] mb-1.5">
               Area
             </label>
             {hasAreas ? (
-              <div ref={areaDropdownRef} className="relative">
-                {/* Dropdown trigger button */}
-                <button
-                  type="button"
-                  onClick={() => setIsAreaDropdownOpen(!isAreaDropdownOpen)}
-                  disabled={isSubmitting}
-                  className={`
-                    w-full
-                    flex items-center justify-between
-                    px-3 py-2
-                    text-[14px]
-                    text-[var(--text-primary)]
-                    bg-[var(--bg-surface)]
-                    border border-[var(--border)]
-                    rounded-[6px]
-                    transition-colors duration-150
-                    disabled:opacity-60
-                    ${isAreaDropdownOpen ? "border-[var(--accent)]" : "hover:border-[var(--text-tertiary)]"}
-                  `}
-                >
-                  <span className="flex items-center gap-2">
-                    {/* Colored dot */}
-                    <span
-                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: selectedArea?.color || "var(--text-tertiary)" }}
-                    />
-                    <span>{selectedArea?.name || "Select area"}</span>
-                  </span>
-                  <ChevronIcon
-                    size={16}
-                    className={`
-                      text-[var(--text-tertiary)]
-                      transition-transform duration-150
-                      ${isAreaDropdownOpen ? "rotate-180" : ""}
-                    `}
-                  />
-                </button>
-
-                {/* Dropdown menu */}
-                {isAreaDropdownOpen && (
-                  <div
-                    className={`
-                      absolute top-full left-0 right-0 mt-1
-                      py-1
-                      bg-[var(--bg-card)]
-                      border border-[var(--border)]
-                      rounded-[6px]
-                      shadow-lg
-                      z-10
-                      /* Limit height with scrollable overflow for many areas */
-                      max-h-[150px] overflow-y-auto
-                      animate-in fade-in slide-in-from-top-1 duration-100
-                    `}
-                  >
-                    {areas.map((area) => (
-                      <button
-                        key={area.id}
-                        type="button"
-                        onClick={() => handleAreaSelect(area.id)}
-                        className={`
-                          w-full
-                          flex items-center gap-2
-                          px-3 py-2
-                          text-[14px] text-left
-                          transition-colors duration-100
-                          ${
-                            area.id === areaId
-                              ? "bg-[var(--bg-surface)] text-[var(--text-primary)]"
-                              : "text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]"
-                          }
-                        `}
-                      >
-                        {/* Colored dot */}
-                        <span
-                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: area.color }}
-                        />
-                        <span>{area.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+              <div className="flex flex-wrap gap-1.5">
+                {areas.map((area) => {
+                  const isSelected = area.id === areaId;
+                  return (
+                    <button
+                      key={area.id}
+                      type="button"
+                      onClick={() => setAreaId(area.id)}
+                      disabled={isSubmitting}
+                      className={`
+                        inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[13px] font-medium
+                        transition-colors duration-150
+                        disabled:opacity-60
+                        ${
+                          isSelected
+                            ? "border-2 text-[var(--text-primary)]"
+                            : "border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]"
+                        }
+                      `}
+                      style={isSelected ? {
+                        borderColor: area.color,
+                        backgroundColor: `${area.color}15`,
+                        color: area.color,
+                      } : undefined}
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: area.color }}
+                      />
+                      {area.name}
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               <p className="text-[12px] text-[#E88B8B] mt-1">
