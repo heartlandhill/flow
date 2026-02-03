@@ -1,0 +1,198 @@
+#!/bin/bash
+#
+# dev-servers - Manage auto-claude worktree dev servers
+#
+# Usage:
+#   dev-servers              # List all running servers
+#   dev-servers list         # List all running servers
+#   dev-servers start <spec> # Start server for spec (partial match OK)
+#   dev-servers stop <spec>  # Stop server for spec (partial match OK)
+#   dev-servers stop-all     # Stop all dev servers
+#
+# Examples:
+#   dev-servers start 038
+#   dev-servers stop area-management
+#   dev-servers stop-all
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+WORKTREES_DIR="$PROJECT_ROOT/.auto-claude/worktrees/tasks"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+list_servers() {
+    echo -e "${CYAN}SPEC                                              PORT    PID${NC}"
+    echo "--------------------------------------------------------------"
+
+    local found=0
+
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+
+        pid=$(echo "$line" | awk '{print $2}')
+
+        # Extract worktree path from command
+        if [[ "$line" =~ \.auto-claude/worktrees/tasks/([^/]+) ]]; then
+            spec="${BASH_REMATCH[1]}"
+
+            # Find port - look for next-server child process listening
+            port=""
+            # Get all child pids
+            child_pids=$(pgrep -P "$pid" 2>/dev/null || true)
+            all_pids="$pid $child_pids"
+
+            for p in $all_pids; do
+                port=$(ss -tlnp 2>/dev/null | grep "pid=$p," | grep -oP ':30\d\d\s' | tr -d ': ' | head -1)
+                [[ -n "$port" ]] && break
+            done
+
+            if [[ -n "$port" ]]; then
+                printf "%-50s ${GREEN}%-7s${NC} %s\n" "$spec" "$port" "$pid"
+            else
+                printf "%-50s ${YELLOW}%-7s${NC} %s\n" "$spec" "..." "$pid"
+            fi
+            found=1
+        fi
+    done < <(ps aux | grep "[n]ext dev" | grep "\.auto-claude/worktrees")
+
+    if [[ $found -eq 0 ]]; then
+        echo -e "${YELLOW}No dev servers running${NC}"
+    fi
+}
+
+find_worktree() {
+    local pattern="$1"
+    local matches=()
+
+    if [[ ! -d "$WORKTREES_DIR" ]]; then
+        echo -e "${RED}Error: Worktrees directory not found${NC}" >&2
+        return 1
+    fi
+
+    for dir in "$WORKTREES_DIR"/*/; do
+        [[ -d "$dir" ]] || continue
+        name=$(basename "$dir")
+        if [[ "$name" == *"$pattern"* ]]; then
+            matches+=("$name")
+        fi
+    done
+
+    if [[ ${#matches[@]} -eq 0 ]]; then
+        echo -e "${RED}Error: No worktree matching '$pattern'${NC}" >&2
+        return 1
+    elif [[ ${#matches[@]} -gt 1 ]]; then
+        echo -e "${RED}Error: Multiple matches for '$pattern':${NC}" >&2
+        for m in "${matches[@]}"; do
+            echo "  - $m" >&2
+        done
+        return 1
+    fi
+
+    echo "${matches[0]}"
+}
+
+start_server() {
+    local pattern="$1"
+    local spec
+
+    spec=$(find_worktree "$pattern") || return 1
+
+    local worktree_path="$WORKTREES_DIR/$spec"
+
+    # Check if already running
+    if ps aux | grep "[n]ext dev" | grep -q "$spec"; then
+        echo -e "${YELLOW}Server for $spec is already running${NC}"
+        list_servers | grep "$spec" || true
+        return 0
+    fi
+
+    echo -e "${GREEN}Starting dev server for $spec...${NC}"
+    cd "$worktree_path"
+    pnpm dev &
+
+    # Wait a moment for it to start
+    sleep 3
+
+    echo ""
+    list_servers | grep -E "(SPEC|$spec|----)" || true
+}
+
+stop_server() {
+    local pattern="$1"
+    local spec
+
+    spec=$(find_worktree "$pattern") || return 1
+
+    # Find the PID
+    local pid
+    pid=$(ps aux | grep "[n]ext dev" | grep "$spec" | awk '{print $2}' | head -1)
+
+    if [[ -z "$pid" ]]; then
+        echo -e "${YELLOW}No running server found for $spec${NC}"
+        return 0
+    fi
+
+    echo -e "${GREEN}Stopping dev server for $spec (PID: $pid)...${NC}"
+    kill "$pid" 2>/dev/null || true
+
+    # Also kill any child processes
+    pkill -P "$pid" 2>/dev/null || true
+
+    echo -e "${GREEN}Stopped${NC}"
+}
+
+stop_all() {
+    echo -e "${GREEN}Stopping all dev servers...${NC}"
+    pkill -f "next dev" 2>/dev/null || true
+    echo -e "${GREEN}Done${NC}"
+}
+
+show_help() {
+    echo "Usage: dev-servers [command] [args]"
+    echo ""
+    echo "Commands:"
+    echo "  list              List all running dev servers (default)"
+    echo "  start <pattern>   Start dev server for worktree matching pattern"
+    echo "  stop <pattern>    Stop dev server for worktree matching pattern"
+    echo "  stop-all          Stop all dev servers"
+    echo ""
+    echo "Examples:"
+    echo "  dev-servers                    # List servers"
+    echo "  dev-servers start 038          # Start 038-area-management"
+    echo "  dev-servers start area         # Start by partial name"
+    echo "  dev-servers stop 039           # Stop 039-tag-management"
+    echo "  dev-servers stop-all           # Stop everything"
+}
+
+# Main
+case "${1:-list}" in
+    list|ls)
+        list_servers
+        ;;
+    start)
+        [[ -z "$2" ]] && { echo -e "${RED}Error: Specify a spec pattern${NC}"; exit 1; }
+        start_server "$2"
+        ;;
+    stop)
+        [[ -z "$2" ]] && { echo -e "${RED}Error: Specify a spec pattern${NC}"; exit 1; }
+        stop_server "$2"
+        ;;
+    stop-all|stopall)
+        stop_all
+        ;;
+    -h|--help|help)
+        show_help
+        ;;
+    *)
+        echo -e "${RED}Unknown command: $1${NC}"
+        show_help
+        exit 1
+        ;;
+esac

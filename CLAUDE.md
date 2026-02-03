@@ -269,3 +269,20 @@ If a spec fails due to API errors or crashes, resume it with:
 3. Common failures:
    - **API 500 errors**: Transient, just re-run with `--auto-continue --force`
    - **QA rejection**: Check `QA_FIX_REQUEST.md` for required fixes
+
+### Managing Worktree Dev Servers
+
+Auto-claude starts dev servers in worktrees during builds. Use the `dev-servers` script to manage them:
+
+```bash
+./scripts/dev-servers              # List all running servers with ports
+./scripts/dev-servers start 038    # Start server for spec (partial match OK)
+./scripts/dev-servers start area   # Start by partial name match
+./scripts/dev-servers stop 039     # Stop server for spec
+./scripts/dev-servers stop-all     # Stop all dev servers
+```
+
+Optional: Add an alias to your shell config:
+```bash
+alias dev-servers='/path/to/flow/scripts/dev-servers'
+```
