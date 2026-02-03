@@ -161,3 +161,94 @@ export async function updateArea(
     return { success: false, error: "Failed to update area" };
   }
 }
+
+/**
+ * Server action to delete an area.
+ * If the area has projects, they must be reassigned to another area.
+ * Uses a transaction to ensure atomic reassign + delete operations.
+ */
+export async function deleteArea(
+  areaId: string,
+  reassignToAreaId?: string
+): Promise<ActionResult> {
+  try {
+    // Validate area ID
+    if (!areaId || typeof areaId !== "string") {
+      return { success: false, error: "Area ID is required" };
+    }
+
+    // Verify area exists and get project count
+    const area = await prisma.area.findUnique({
+      where: { id: areaId },
+      include: {
+        _count: {
+          select: { projects: true },
+        },
+      },
+    });
+
+    if (!area) {
+      return { success: false, error: "Area not found" };
+    }
+
+    const projectCount = area._count.projects;
+
+    // If area has projects, destination area is required
+    if (projectCount > 0) {
+      if (!reassignToAreaId || typeof reassignToAreaId !== "string") {
+        return {
+          success: false,
+          error: "Destination area is required when deleting an area with projects",
+        };
+      }
+
+      // Cannot reassign to self
+      if (reassignToAreaId === areaId) {
+        return {
+          success: false,
+          error: "Cannot reassign projects to the same area being deleted",
+        };
+      }
+
+      // Verify destination area exists
+      const destinationArea = await prisma.area.findUnique({
+        where: { id: reassignToAreaId },
+      });
+
+      if (!destinationArea) {
+        return { success: false, error: "Destination area not found" };
+      }
+    }
+
+    // Use transaction to reassign projects and delete area atomically
+    await prisma.$transaction(async (tx) => {
+      // Move projects to destination area if any exist
+      if (projectCount > 0 && reassignToAreaId) {
+        await tx.project.updateMany({
+          where: { area_id: areaId },
+          data: { area_id: reassignToAreaId },
+        });
+      }
+
+      // Delete the area
+      await tx.area.delete({
+        where: { id: areaId },
+      });
+    });
+
+    // Revalidate all views that show areas or projects
+    revalidatePath("/projects");
+    revalidatePath("/inbox");
+    revalidatePath("/today");
+    revalidatePath("/forecast");
+    revalidatePath("/review");
+    revalidatePath("/tags");
+    // Revalidate layout to update navigation
+    revalidatePath("/", "layout");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Delete area error:", error);
+    return { success: false, error: "Failed to delete area" };
+  }
+}
