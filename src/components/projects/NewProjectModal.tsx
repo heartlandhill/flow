@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { ChevronIcon } from "@/components/ui/Icons";
 import { createProject } from "@/actions/projects";
+import { deleteTask } from "@/actions/tasks";
 
 /**
  * Area type for the modal props (minimal - just what we need for display)
@@ -21,6 +23,12 @@ interface NewProjectModalProps {
   onClose: () => void;
   areas: Area[];
   onCreated?: (projectId: string) => void;
+  /** Optional default name to pre-fill the input (e.g., when converting a task) */
+  defaultName?: string;
+  /** Optional task ID to delete after project creation (for task-to-project conversion) */
+  taskIdToConvert?: string;
+  /** Optional custom header title (defaults to "New Project") */
+  headerTitle?: string;
 }
 
 /**
@@ -37,9 +45,12 @@ export function NewProjectModal({
   onClose,
   areas,
   onCreated,
+  defaultName = "",
+  taskIdToConvert,
+  headerTitle,
 }: NewProjectModalProps) {
-  // Form state
-  const [name, setName] = useState("");
+  // Form state - initialize with defaultName if provided
+  const [name, setName] = useState(defaultName);
   const [areaId, setAreaId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +61,7 @@ export function NewProjectModal({
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Pre-select first area and autofocus input when modal opens
+  // Pre-select first area, set default name, and autofocus input when modal opens
   useEffect(() => {
     if (isOpen) {
       // Pre-select first area if available and no area selected
@@ -58,13 +69,22 @@ export function NewProjectModal({
         setAreaId(areas[0].id);
       }
 
+      // Set default name if provided
+      if (defaultName) {
+        setName(defaultName);
+      }
+
       // Autofocus with small delay to ensure animation has started
       const timer = setTimeout(() => {
         inputRef.current?.focus();
+        // Select all text if there's a default name (for easy replacement)
+        if (defaultName && inputRef.current) {
+          inputRef.current.select();
+        }
       }, 50);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, areas, areaId]);
+  }, [isOpen, areas, areaId, defaultName]);
 
   // Clear state when modal closes
   useEffect(() => {
@@ -143,6 +163,15 @@ export function NewProjectModal({
       });
 
       if (result.success && result.data) {
+        // If converting a task, delete the original task
+        if (taskIdToConvert) {
+          const deleteResult = await deleteTask(taskIdToConvert);
+          if (!deleteResult.success) {
+            console.error("Failed to delete converted task:", deleteResult.error);
+            // Still consider conversion successful - project was created
+          }
+        }
+
         onClose();
         // Notify parent of successful creation with new project ID
         onCreated?.(result.data.id);
@@ -154,7 +183,7 @@ export function NewProjectModal({
     } finally {
       setIsSubmitting(false);
     }
-  }, [name, areaId, isSubmitting, onClose, onCreated]);
+  }, [name, areaId, isSubmitting, onClose, onCreated, taskIdToConvert]);
 
   // Handle area selection from custom dropdown
   const handleAreaSelect = useCallback((selectedAreaId: string) => {
@@ -181,7 +210,8 @@ export function NewProjectModal({
   // Handle edge case: no areas available
   const hasAreas = areas.length > 0;
 
-  return (
+  // Use portal to render at document root (fixes positioning when opened from bottom sheets)
+  const modalContent = (
     <div
       role="dialog"
       aria-modal="true"
@@ -229,7 +259,7 @@ export function NewProjectModal({
               uppercase
             `}
           >
-            New Project
+            {headerTitle || "New Project"}
           </span>
         </div>
 
@@ -391,10 +421,18 @@ export function NewProjectModal({
               disabled:opacity-50 disabled:cursor-not-allowed
             `}
           >
-            {isSubmitting ? "Creating..." : "Create Project"}
+            {isSubmitting
+              ? taskIdToConvert
+                ? "Converting..."
+                : "Creating..."
+              : "Create Project"}
           </button>
         </div>
       </div>
     </div>
   );
+
+  // Render via portal to document body for correct positioning
+  if (typeof document === "undefined") return null;
+  return createPortal(modalContent, document.body);
 }

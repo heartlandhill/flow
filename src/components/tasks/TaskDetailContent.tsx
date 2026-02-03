@@ -5,7 +5,6 @@ import { ForecastIcon, CloseIcon, FolderPlusIcon } from "@/components/ui/Icons";
 import { updateTask, deleteTask } from "@/actions/tasks";
 import { useSelectedTask } from "@/context/SelectedTaskContext";
 import { NewProjectModal } from "@/components/projects/NewProjectModal";
-import { ConvertToProjectModal } from "@/components/tasks/ConvertToProjectModal";
 import type { TaskWithRelations, UpdateTaskInput } from "@/types";
 
 // Simplified type for project dropdown - just need id, name, and area info
@@ -894,14 +893,15 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
         }}
       />
 
-      {/* Convert to Project Modal */}
-      <ConvertToProjectModal
+      {/* Convert to Project Modal - reuses NewProjectModal with conversion props */}
+      <NewProjectModal
         isOpen={showConvertModal}
         onClose={() => setShowConvertModal(false)}
-        taskId={task.id}
-        taskTitle={task.title}
         areas={areasWithProjects.map((a) => ({ id: a.id, name: a.name, color: a.color }))}
-        onConverted={() => {
+        defaultName={task.title}
+        taskIdToConvert={task.id}
+        headerTitle="Convert to Project"
+        onCreated={() => {
           // Task no longer exists after conversion - close the detail panel
           clearSelectedTask();
         }}
