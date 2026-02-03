@@ -89,6 +89,34 @@ export async function updateTag(
 }
 
 /**
+ * Server action to delete a tag.
+ * The cascade delete in the schema will automatically remove all task_tag associations.
+ */
+export async function deleteTag(tagId: string): Promise<ActionResult> {
+  try {
+    // Validate tag ID
+    if (!tagId || typeof tagId !== "string") {
+      return { success: false, error: "Tag ID is required" };
+    }
+
+    await prisma.tag.delete({
+      where: { id: tagId },
+    });
+
+    // Revalidate all views that show tags or tasks with tags
+    revalidatePath("/tags");
+    revalidatePath("/inbox");
+    revalidatePath("/today");
+    revalidatePath("/projects");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Delete tag error:", error);
+    return { success: false, error: "Failed to delete tag" };
+  }
+}
+
+/**
  * Server action to set the tags for a task.
  * Replaces all existing tags with the provided tag IDs.
  * Uses a transaction to ensure atomicity.
