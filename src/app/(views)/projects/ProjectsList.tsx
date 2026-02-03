@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AreaGroup } from "@/components/projects/AreaGroup";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { NewProjectModal } from "@/components/projects/NewProjectModal";
+import { AreaManagementModal } from "@/components/areas/AreaManagementModal";
 import { completeTask } from "@/actions/tasks";
 import { useSearch } from "@/context/SearchContext";
 import { PlusIcon } from "@/components/ui/Icons";
@@ -43,6 +44,8 @@ export function ProjectsList({
   const router = useRouter();
   // Modal state for NewProjectModal
   const [isModalOpen, setIsModalOpen] = useState(false);
+  // Modal state for AreaManagementModal
+  const [isAreaModalOpen, setIsAreaModalOpen] = useState(false);
   // Track which tasks are being completed to prevent double-clicks
   const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
   // React transition for non-blocking server action calls
@@ -57,6 +60,15 @@ export function ProjectsList({
 
   const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
+  }, []);
+
+  // Area management modal handlers
+  const handleOpenAreaModal = useCallback(() => {
+    setIsAreaModalOpen(true);
+  }, []);
+
+  const handleCloseAreaModal = useCallback(() => {
+    setIsAreaModalOpen(false);
   }, []);
 
   // Navigate to project detail page after creation
@@ -122,6 +134,28 @@ export function ProjectsList({
   if (isEmpty) {
     return (
       <>
+        {/* Action header with Manage Areas button even in empty state */}
+        <div className="flex justify-end gap-2 mb-4">
+          <button
+            type="button"
+            onClick={handleOpenAreaModal}
+            className={`
+              flex items-center gap-1.5
+              px-3 py-1.5
+              text-[14px] font-medium
+              text-[var(--text-secondary)]
+              bg-transparent
+              rounded-md
+              transition-all duration-150
+              hover:bg-[var(--bg-hover)]
+              hover:text-[var(--text-primary)]
+              active:scale-[0.98]
+              focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2
+            `}
+          >
+            <span>Manage Areas</span>
+          </button>
+        </div>
         <EmptyState onCreateClick={handleOpenModal} />
         <NewProjectModal
           isOpen={isModalOpen}
@@ -129,14 +163,37 @@ export function ProjectsList({
           areas={allAreas}
           onCreated={handleProjectCreated}
         />
+        <AreaManagementModal
+          isOpen={isAreaModalOpen}
+          onClose={handleCloseAreaModal}
+        />
       </>
     );
   }
 
   return (
     <div>
-      {/* Action header with New Project button */}
-      <div className="flex justify-end mb-4">
+      {/* Action header with Manage Areas and New Project buttons */}
+      <div className="flex justify-end gap-2 mb-4">
+        <button
+          type="button"
+          onClick={handleOpenAreaModal}
+          className={`
+            flex items-center gap-1.5
+            px-3 py-1.5
+            text-[14px] font-medium
+            text-[var(--text-secondary)]
+            bg-transparent
+            rounded-md
+            transition-all duration-150
+            hover:bg-[var(--bg-hover)]
+            hover:text-[var(--text-primary)]
+            active:scale-[0.98]
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2
+          `}
+        >
+          <span>Manage Areas</span>
+        </button>
         <button
           type="button"
           onClick={handleOpenModal}
@@ -219,6 +276,12 @@ export function ProjectsList({
         onClose={handleCloseModal}
         areas={allAreas}
         onCreated={handleProjectCreated}
+      />
+
+      {/* Area Management Modal */}
+      <AreaManagementModal
+        isOpen={isAreaModalOpen}
+        onClose={handleCloseAreaModal}
       />
     </div>
   );
