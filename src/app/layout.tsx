@@ -8,6 +8,7 @@ import { MobileHeader } from "@/components/layout/MobileHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { QuickCaptureWrapper } from "@/components/layout/QuickCaptureWrapper";
 import { SelectedTaskWrapper } from "@/components/layout/SelectedTaskWrapper";
+import { TaskDetail } from "@/components/tasks/TaskDetail";
 import { SearchProvider } from "@/context/SearchContext";
 
 export const metadata: Metadata = {
@@ -82,10 +83,16 @@ export default async function RootLayout({
               {/* TopBar */}
               <TopBar />
 
-              {/* Page Content */}
-              <main className="flex-1 overflow-y-auto">
-                {children}
-              </main>
+              {/* Content wrapper - contains scrollable content and TaskDetail */}
+              <div className="flex-1 flex overflow-hidden">
+                {/* Page Content - shrinks when panel appears */}
+                <main className="flex-1 overflow-y-auto">
+                  {children}
+                </main>
+
+                {/* Task Detail Panel */}
+                <TaskDetail areasWithProjects={areasWithProjects} allTags={allTags} />
+              </div>
             </div>
           </div>
 

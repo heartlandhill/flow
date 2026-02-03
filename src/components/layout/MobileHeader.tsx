@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSelectedTask } from '@/context/SelectedTaskContext';
 import {
   InboxIcon,
   TodayIcon,
@@ -45,11 +46,17 @@ const navItems: NavItem[] = [
 export function MobileHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { clearSelectedTask } = useSelectedTask();
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
 
   const closeMenu = useCallback(() => {
     setIsMenuOpen(false);
   }, []);
+
+  const handleNavigation = useCallback(() => {
+    closeMenu();
+    clearSelectedTask();
+  }, [closeMenu, clearSelectedTask]);
 
   // Close menu on escape key
   useEffect(() => {
@@ -150,7 +157,7 @@ export function MobileHeader() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    onClick={closeMenu}
+                    onClick={handleNavigation}
                     className={`
                       flex items-center gap-3 px-4 py-3 rounded-lg text-base transition-colors
                       ${active

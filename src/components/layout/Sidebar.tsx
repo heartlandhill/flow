@@ -12,6 +12,7 @@ import {
   PlusIcon,
 } from '@/components/ui/Icons';
 import { useQuickCapture } from '@/hooks/useQuickCapture';
+import { useSelectedTask } from '@/context/SelectedTaskContext';
 import type { BadgeCounts } from '@/lib/queries/badge-counts';
 
 interface SidebarProps {
@@ -48,6 +49,7 @@ const navItems: NavItem[] = [
 export function Sidebar({ badgeCounts }: SidebarProps) {
   const pathname = usePathname();
   const { open } = useQuickCapture();
+  const { clearSelectedTask } = useSelectedTask();
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
 
   return (
@@ -77,6 +79,7 @@ export function Sidebar({ badgeCounts }: SidebarProps) {
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  onClick={clearSelectedTask}
                   className={`
                     group flex items-center gap-2.5 px-3 py-2 rounded-md text-[13.5px] transition-all duration-150
                     hover:bg-[var(--bg-hover)]
@@ -129,7 +132,7 @@ export function Sidebar({ badgeCounts }: SidebarProps) {
           <PlusIcon size={16} />
           <span className="text-[13px]">Quick Capture</span>
           <span className="ml-auto text-[11px] text-[var(--text-tertiary)]">
-            ⌃⌘N
+            ⌘N
           </span>
         </button>
       </div>

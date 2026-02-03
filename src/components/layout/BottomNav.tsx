@@ -9,6 +9,7 @@ import {
   ProjectsIcon,
   TagsIcon,
 } from '@/components/ui/Icons';
+import { useSelectedTask } from '@/context/SelectedTaskContext';
 import type { BadgeCounts } from '@/lib/queries/badge-counts';
 
 interface BottomNavProps {
@@ -43,6 +44,7 @@ const navItems: NavItem[] = [
 
 export function BottomNav({ badgeCounts }: BottomNavProps) {
   const pathname = usePathname();
+  const { clearSelectedTask } = useSelectedTask();
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
 
   return (
@@ -60,6 +62,7 @@ export function BottomNav({ badgeCounts }: BottomNavProps) {
             <li key={item.href} className="flex-1 h-full">
               <Link
                 href={item.href}
+                onClick={clearSelectedTask}
                 className="flex flex-col items-center justify-center gap-0.5 py-1.5 min-h-[44px] h-full transition-colors focus:outline-none focus-visible:bg-[var(--bg-hover)] rounded-md"
               >
                 <div className="relative">

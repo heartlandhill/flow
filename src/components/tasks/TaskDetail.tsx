@@ -75,8 +75,8 @@ export function TaskDetail({ areasWithProjects = [], allTags = [] }: TaskDetailP
     <aside
       className={`
         hidden md:flex
-        fixed top-0 right-0 bottom-0
-        w-[340px]
+        w-[340px] min-w-[340px]
+        h-full
         flex-col
         bg-[var(--bg-sidebar)]
         border-l border-[var(--border)]

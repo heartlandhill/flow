@@ -2,7 +2,6 @@
 
 import { ReactNode } from "react";
 import { SelectedTaskProvider } from "@/context/SelectedTaskContext";
-import { TaskDetail } from "@/components/tasks/TaskDetail";
 import { TaskDetailSheet } from "@/components/tasks/TaskDetailSheet";
 
 // Simplified type for project dropdown - just need id, name
@@ -43,15 +42,15 @@ function SelectedTaskContent({ children, areasWithProjects = [], allTags = [] }:
     <>
       {children}
       <TaskDetailSheet areasWithProjects={areasWithProjects} allTags={allTags} />
-      <TaskDetail areasWithProjects={areasWithProjects} allTags={allTags} />
     </>
   );
 }
 
 /**
  * Client wrapper that provides SelectedTask context to the app.
- * Wraps children in SelectedTaskProvider and renders both mobile
- * (TaskDetailSheet) and desktop (TaskDetail) detail components.
+ * Wraps children in SelectedTaskProvider and renders the mobile
+ * TaskDetailSheet component. Desktop TaskDetail is rendered in
+ * layout.tsx as part of the flex-based layout structure.
  *
  * This keeps the root layout as a server component while adding
  * the client-side context for selected task functionality.
