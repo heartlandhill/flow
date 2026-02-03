@@ -12,13 +12,18 @@ import {
   PlusIcon,
 } from '@/components/ui/Icons';
 import { useQuickCapture } from '@/hooks/useQuickCapture';
+import type { BadgeCounts } from '@/lib/queries/badge-counts';
+
+interface SidebarProps {
+  badgeCounts: BadgeCounts;
+}
 
 interface NavItem {
   href: string;
   label: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
   accentVar: string;
-  badge?: number;
+  badgeKey?: keyof BadgeCounts;
 }
 
 // Static class mapping to ensure Tailwind JIT generates these classes
@@ -32,15 +37,15 @@ const accentClasses: Record<string, string> = {
 };
 
 const navItems: NavItem[] = [
-  { href: '/inbox', label: 'Inbox', icon: InboxIcon, accentVar: '--view-inbox', badge: 4 },
-  { href: '/today', label: 'Today', icon: TodayIcon, accentVar: '--view-today', badge: 2 },
+  { href: '/inbox', label: 'Inbox', icon: InboxIcon, accentVar: '--view-inbox', badgeKey: 'inbox' },
+  { href: '/today', label: 'Today', icon: TodayIcon, accentVar: '--view-today', badgeKey: 'today' },
   { href: '/forecast', label: 'Forecast', icon: ForecastIcon, accentVar: '--view-forecast' },
   { href: '/projects', label: 'Projects', icon: ProjectsIcon, accentVar: '--view-projects' },
   { href: '/tags', label: 'Tags', icon: TagsIcon, accentVar: '--view-tags' },
-  { href: '/review', label: 'Review', icon: ReviewIcon, accentVar: '--view-review', badge: 3 },
+  { href: '/review', label: 'Review', icon: ReviewIcon, accentVar: '--view-review', badgeKey: 'review' },
 ];
 
-export function Sidebar() {
+export function Sidebar({ badgeCounts }: SidebarProps) {
   const pathname = usePathname();
   const { open } = useQuickCapture();
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
@@ -66,6 +71,7 @@ export function Sidebar() {
           {navItems.map((item) => {
             const active = isActive(item.href);
             const Icon = item.icon;
+            const badgeCount = item.badgeKey ? badgeCounts[item.badgeKey] : 0;
 
             return (
               <li key={item.href}>
@@ -92,11 +98,11 @@ export function Sidebar() {
                   >
                     {item.label}
                   </span>
-                  {item.badge !== undefined && (
+                  {badgeCount > 0 && (
                     <span
                       className="ml-auto min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-[var(--accent)] text-[9px] font-medium text-[var(--bg-root)] px-1.5"
                     >
-                      {item.badge}
+                      {badgeCount}
                     </span>
                   )}
                 </Link>
