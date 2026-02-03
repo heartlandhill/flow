@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { cancelReminder } from "@/lib/notifications/scheduler";
-import type { ActionResult, Task, TaskWithRelations } from "@/types";
+import type { ActionResult, Project, ProjectType, Task, TaskWithRelations } from "@/types";
 
 /**
  * Server action to create a new task in the inbox.
@@ -377,5 +377,76 @@ export async function reorderTasks(
   } catch (error) {
     console.error("Reorder tasks error:", error);
     return { success: false, error: "Failed to reorder tasks" };
+  }
+}
+
+/**
+ * Server action to convert an inbox task to a project.
+ * Creates a new project with the task's title as the name, then deletes the task.
+ * Only inbox tasks can be converted (GTD clarification workflow).
+ */
+export async function convertTaskToProject(
+  taskId: string,
+  areaId: string,
+  projectType: ProjectType
+): Promise<ActionResult<Project>> {
+  try {
+    // Validate task ID
+    if (!taskId || typeof taskId !== "string") {
+      return { success: false, error: "Task ID is required" };
+    }
+
+    // Validate area ID
+    if (!areaId || typeof areaId !== "string") {
+      return { success: false, error: "Area ID is required" };
+    }
+
+    // Verify task exists and is an inbox task
+    const task = await prisma.task.findUnique({
+      where: { id: taskId },
+    });
+
+    if (!task) {
+      return { success: false, error: "Task not found" };
+    }
+
+    if (!task.inbox) {
+      return { success: false, error: "Only inbox tasks can be converted to projects" };
+    }
+
+    // Verify area exists
+    const area = await prisma.area.findUnique({
+      where: { id: areaId },
+    });
+
+    if (!area) {
+      return { success: false, error: "Area not found" };
+    }
+
+    // Create the project with task's title as name
+    const project = await prisma.project.create({
+      data: {
+        name: task.title.trim(),
+        area_id: areaId,
+        type: projectType,
+        status: "ACTIVE",
+      },
+    });
+
+    // Delete the original task (cascade handles TaskTag, Reminder)
+    await prisma.task.delete({
+      where: { id: taskId },
+    });
+
+    // Revalidate affected paths
+    revalidatePath("/inbox");
+    revalidatePath("/projects");
+    // Revalidate layout to update navigation badge counts
+    revalidatePath("/", "layout");
+
+    return { success: true, data: project };
+  } catch (error) {
+    console.error("Convert task to project error:", error);
+    return { success: false, error: "Failed to convert task to project" };
   }
 }
