@@ -6,6 +6,7 @@ import { ForecastIcon, CloseIcon, FolderPlusIcon } from "@/components/ui/Icons";
 import { updateTask, deleteTask } from "@/actions/tasks";
 import { useSelectedTask } from "@/context/SelectedTaskContext";
 import { NewProjectModal } from "@/components/projects/NewProjectModal";
+import { ProjectPicker } from "@/components/ui/ProjectPicker";
 import type { TaskWithRelations, UpdateTaskInput } from "@/types";
 
 // Simplified type for project dropdown - just need id, name, and area info
@@ -418,38 +419,13 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
             Project
           </span>
           {isEditing ? (
-            // Edit mode: show dropdown with projects grouped by area
-            <div className="flex flex-col gap-1">
-              <select
-                value={editedProjectId || ""}
-                onChange={(e) => setEditedProjectId(e.target.value || null)}
-                className="w-full px-3 py-2 rounded-[6px] bg-[var(--bg-surface)] border border-[var(--border)] text-[14px] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
-              >
-                <option value="">No project</option>
-                {areasWithProjects.length > 0 ? (
-                  areasWithProjects.map((area) => (
-                    <optgroup key={area.id} label={area.name}>
-                      {area.projects.map((project) => (
-                        <option key={project.id} value={project.id}>
-                          {project.name}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))
-                ) : (
-                  <option value="" disabled>
-                    No projects available
-                  </option>
-                )}
-              </select>
-              <button
-                type="button"
-                onClick={() => setShowNewProjectModal(true)}
-                className="text-[12px] text-[var(--text-secondary)] mt-1 hover:underline text-left w-fit"
-              >
-                + New Project
-              </button>
-            </div>
+            // Edit mode: show searchable project picker
+            <ProjectPicker
+              value={editedProjectId}
+              onChange={setEditedProjectId}
+              areasWithProjects={areasWithProjects}
+              onNewProject={() => setShowNewProjectModal(true)}
+            />
           ) : task.project ? (
             // Display mode with project
             <span
