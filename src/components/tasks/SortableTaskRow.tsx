@@ -58,7 +58,7 @@ export function SortableTaskRow({
           p-1 rounded
           cursor-grab
           text-[var(--text-tertiary)]
-          opacity-0 group-hover:opacity-100 focus:opacity-100
+          opacity-40 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100
           hover:text-[var(--text-secondary)]
           focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]
           transition-opacity duration-150
