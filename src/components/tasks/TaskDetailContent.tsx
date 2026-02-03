@@ -158,6 +158,7 @@ function getAreaColor(areaColor: string | null | undefined): string {
  */
 export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], allTags = [] }: TaskDetailContentProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Helper to convert Date to YYYY-MM-DD string for input type="date"
   const dateToInputString = (date: Date | null): string => {
@@ -246,6 +247,32 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
   const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEditedNotes(e.target.value);
   };
+
+  // Handle delete button click - show confirmation dialog
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  // Handle cancel delete - close confirmation dialog
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+  };
+
+  // Handle confirm delete - will call deleteTask action in a later subtask
+  const handleConfirmDelete = useCallback(() => {
+    // TODO: Call deleteTask server action
+    setShowDeleteConfirm(false);
+  }, []);
+
+  // Handle overlay click for delete confirmation dialog
+  const handleDeleteOverlayClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (e.target === e.currentTarget) {
+        setShowDeleteConfirm(false);
+      }
+    },
+    []
+  );
 
   return (
     <div className="flex flex-col h-full">
@@ -552,15 +579,130 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
               >
                 Cancel
               </button>
-            </div>
-
-            {/* Desktop layout: side by side, right-aligned */}
-            <div className="hidden md:flex gap-3 justify-end mt-4">
               <button
                 type="button"
-                onClick={handleCancelClick}
+                onClick={handleDeleteClick}
+                className={`
+                  w-full py-2.5
+                  text-[14px] font-medium
+                  text-[#E88B8B]
+                  bg-transparent
+                  rounded-md
+                  transition-all duration-150
+                  hover:opacity-80
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E88B8B] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
+                `}
+              >
+                Delete
+              </button>
+            </div>
+
+            {/* Desktop layout: Delete on left, Cancel/Save on right */}
+            <div className="hidden md:flex justify-between items-center mt-4">
+              <button
+                type="button"
+                onClick={handleDeleteClick}
                 className={`
                   px-4 py-2
+                  text-[14px] font-medium
+                  text-[#E88B8B]
+                  bg-transparent
+                  rounded-md
+                  transition-all duration-150
+                  hover:opacity-80
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E88B8B] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
+                `}
+              >
+                Delete
+              </button>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleCancelClick}
+                  className={`
+                    px-4 py-2
+                    text-[14px] font-medium
+                    text-[var(--text-secondary)]
+                    bg-[var(--bg-surface)]
+                    border border-[var(--border)]
+                    rounded-md
+                    transition-all duration-150
+                    hover:opacity-80
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
+                  `}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={!editedTitle.trim()}
+                  className={`
+                    px-4 py-2
+                    text-[14px] font-medium
+                    text-[#1a1a1e]
+                    bg-[var(--accent)]
+                    rounded-md
+                    transition-all duration-150
+                    hover:opacity-90
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                  `}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Delete confirmation dialog */}
+      {showDeleteConfirm && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-confirm-title"
+          onClick={handleDeleteOverlayClick}
+          className={`
+            fixed inset-0 z-50
+            flex items-center justify-center
+            bg-black/60 backdrop-blur-sm
+            animate-in fade-in duration-150
+          `}
+        >
+          {/* Dialog Card */}
+          <div
+            className={`
+              /* Width */
+              w-[calc(100%-32px)] max-w-[320px]
+
+              /* Styling */
+              bg-[var(--bg-card)]
+              border border-[var(--border)]
+              rounded-[14px]
+              shadow-xl
+              p-5
+
+              /* Animation */
+              animate-in fade-in slide-in-from-bottom-2 zoom-in-[0.97]
+              duration-200
+            `}
+          >
+            {/* Title */}
+            <h3
+              id="delete-confirm-title"
+              className="text-[16px] font-medium text-[var(--text-primary)] text-center mb-4"
+            >
+              Delete this task?
+            </h3>
+
+            {/* Action buttons */}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleCancelDelete}
+                className={`
+                  flex-1 py-2.5
                   text-[14px] font-medium
                   text-[var(--text-secondary)]
                   bg-[var(--bg-surface)]
@@ -575,25 +717,24 @@ export function TaskDetailContent({ task, onEditClick, areasWithProjects = [], a
               </button>
               <button
                 type="button"
-                disabled={!editedTitle.trim()}
+                onClick={handleConfirmDelete}
                 className={`
-                  px-4 py-2
+                  flex-1 py-2.5
                   text-[14px] font-medium
-                  text-[#1a1a1e]
-                  bg-[var(--accent)]
+                  text-white
+                  bg-[#E88B8B]
                   rounded-md
                   transition-all duration-150
                   hover:opacity-90
-                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
-                  disabled:opacity-50 disabled:cursor-not-allowed
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E88B8B] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)]
                 `}
               >
-                Save
+                Delete
               </button>
             </div>
-          </>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
