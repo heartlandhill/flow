@@ -72,10 +72,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Upsert subscription by endpoint
-    // Check if a subscription with this endpoint already exists
+    // Upsert subscription by endpoint and user_id
+    // Check if a subscription with this endpoint already exists for this user
     const existingSubscription = await prisma.notificationSubscription.findFirst({
-      where: { endpoint: body.endpoint },
+      where: {
+        endpoint: body.endpoint,
+        user_id: userId,
+      },
     });
 
     let subscription;
@@ -87,6 +90,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         data: {
           type: "WEB_PUSH",
           active: true,
+          user_id: userId,
           p256dh: body.keys.p256dh,
           auth: body.keys.auth,
         },
@@ -146,9 +150,12 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Find subscription by endpoint
+    // Find subscription by endpoint and user_id
     const subscription = await prisma.notificationSubscription.findFirst({
-      where: { endpoint: body.endpoint },
+      where: {
+        endpoint: body.endpoint,
+        user_id: userId,
+      },
     });
 
     if (!subscription) {
