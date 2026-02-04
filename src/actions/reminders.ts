@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { scheduleReminder, cancelReminder } from "@/lib/notifications/scheduler";
 import type { ActionResult, Reminder } from "@/types";
+import { requireUserId } from "@/lib/auth";
 
 /**
  * Server action to create a reminder for a task.
@@ -17,6 +18,8 @@ export async function createReminder(
   triggerAt: Date
 ): Promise<ActionResult<Reminder>> {
   try {
+    const userId = await requireUserId();
+
     // Validate task ID
     if (!taskId || typeof taskId !== "string") {
       return { success: false, error: "Task ID is required" };
@@ -27,13 +30,19 @@ export async function createReminder(
       return { success: false, error: "Valid trigger time is required" };
     }
 
-    // Verify task exists
+    // Verify task exists and belongs to user
     const task = await prisma.task.findUnique({
       where: { id: taskId },
+      select: { id: true, completed: true, user_id: true },
     });
 
     if (!task) {
       return { success: false, error: "Task not found" };
+    }
+
+    // Verify task belongs to current user
+    if (task.user_id !== userId) {
+      return { success: false, error: "Not authorized" };
     }
 
     // Don't create reminders for completed tasks
@@ -41,10 +50,11 @@ export async function createReminder(
       return { success: false, error: "Cannot create reminder for completed task" };
     }
 
-    // Create the reminder record with PENDING status
+    // Create the reminder record with PENDING status (inherit user_id from task)
     const reminder = await prisma.reminder.create({
       data: {
         task_id: taskId,
+        user_id: task.user_id,
         trigger_at: triggerAt,
         status: "PENDING",
       },

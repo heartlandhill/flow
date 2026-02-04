@@ -120,3 +120,30 @@ export async function clearSessionCookie(): Promise<void> {
 
   cookieStore.delete(COOKIE_NAME);
 }
+
+/**
+ * Gets the current user ID from the session cookie.
+ * Returns null if no valid session exists.
+ */
+export async function getCurrentUserId(): Promise<string | null> {
+  const token = await getSessionFromCookies();
+  if (!token) {
+    return null;
+  }
+
+  return await validateSession(token);
+}
+
+/**
+ * Gets the current user ID from the session cookie.
+ * Throws an error if no valid session exists.
+ */
+export async function requireUserId(): Promise<string> {
+  const userId = await getCurrentUserId();
+
+  if (!userId) {
+    throw new Error("Unauthorized: Valid session required");
+  }
+
+  return userId;
+}

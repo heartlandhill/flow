@@ -8,6 +8,7 @@ import type {
   ProjectStatus,
   ProjectType,
 } from "@/types";
+import { requireUserId } from "@/lib/auth";
 
 /**
  * Input data for creating a new project.
@@ -43,6 +44,8 @@ export async function createProject(
   input: CreateProjectInput
 ): Promise<ActionResult<Project>> {
   try {
+    const userId = await requireUserId();
+
     // Validate required inputs
     if (!input.name || typeof input.name !== "string" || input.name.trim().length === 0) {
       return { success: false, error: "Project name is required" };
@@ -65,6 +68,7 @@ export async function createProject(
       data: {
         name: input.name.trim(),
         area_id: input.areaId,
+        user_id: userId,
         notes: input.notes?.trim() ?? null,
         status: input.status ?? "ACTIVE",
         type: input.type ?? "PARALLEL",

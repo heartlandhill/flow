@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionFromCookies, validateSession } from "@/lib/auth";
+import { getCurrentUserId } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 /**
@@ -27,14 +27,9 @@ interface UnsubscribeRequestBody {
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     // Validate session
-    const token = await getSessionFromCookies();
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const userId = await validateSession(token);
+    const userId = await getCurrentUserId();
     if (!userId) {
-      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Parse request body
@@ -102,6 +97,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         data: {
           type: "WEB_PUSH",
           active: true,
+          user_id: userId,
           endpoint: body.endpoint,
           p256dh: body.keys.p256dh,
           auth: body.keys.auth,
@@ -126,14 +122,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 export async function DELETE(request: NextRequest): Promise<NextResponse> {
   try {
     // Validate session
-    const token = await getSessionFromCookies();
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const userId = await validateSession(token);
+    const userId = await getCurrentUserId();
     if (!userId) {
-      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Parse request body

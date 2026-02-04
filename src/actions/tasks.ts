@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { cancelReminder } from "@/lib/notifications/scheduler";
 import type { ActionResult, Project, ProjectType, Task, TaskWithRelations } from "@/types";
+import { requireUserId } from "@/lib/auth";
 
 /**
  * Server action to create a new task in the inbox.
@@ -11,6 +12,8 @@ import type { ActionResult, Project, ProjectType, Task, TaskWithRelations } from
  */
 export async function createTask(title: string): Promise<ActionResult<Task>> {
   try {
+    const userId = await requireUserId();
+
     // Validate input
     if (!title || typeof title !== "string" || title.trim().length === 0) {
       return { success: false, error: "Task title is required" };
@@ -21,6 +24,7 @@ export async function createTask(title: string): Promise<ActionResult<Task>> {
         title: title.trim(),
         inbox: true,
         completed: false,
+        user_id: userId,
       },
     });
 
@@ -54,6 +58,8 @@ export async function createTaskInProject(
   }
 ): Promise<ActionResult<Task>> {
   try {
+    const userId = await requireUserId();
+
     // Validate title input
     if (!title || typeof title !== "string" || title.trim().length === 0) {
       return { success: false, error: "Task title is required" };
@@ -78,6 +84,7 @@ export async function createTaskInProject(
       title: title.trim(),
       inbox: false,
       completed: false,
+      user_id: userId,
       project_id: projectId,
       due_date: options?.due_date ?? null,
       defer_date: options?.defer_date ?? null,
@@ -485,6 +492,8 @@ export async function convertTaskToProject(
   projectType: ProjectType
 ): Promise<ActionResult<Project>> {
   try {
+    const userId = await requireUserId();
+
     // Validate task ID
     if (!taskId || typeof taskId !== "string") {
       return { success: false, error: "Task ID is required" };
@@ -498,10 +507,16 @@ export async function convertTaskToProject(
     // Verify task exists and is an inbox task
     const task = await prisma.task.findUnique({
       where: { id: taskId },
+      select: { id: true, title: true, inbox: true, user_id: true },
     });
 
     if (!task) {
       return { success: false, error: "Task not found" };
+    }
+
+    // Verify task belongs to current user
+    if (task.user_id !== userId) {
+      return { success: false, error: "Not authorized" };
     }
 
     if (!task.inbox) {
@@ -522,6 +537,7 @@ export async function convertTaskToProject(
       data: {
         name: task.title.trim(),
         area_id: areaId,
+        user_id: task.user_id,
         type: projectType,
         status: "ACTIVE",
       },

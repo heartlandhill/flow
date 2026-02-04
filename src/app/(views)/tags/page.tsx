@@ -44,6 +44,7 @@ export default async function TagsPage() {
     name: tag.name,
     icon: tag.icon,
     sort_order: tag.sort_order,
+    user_id: tag.user_id,
     created_at: tag.created_at,
     updated_at: tag.updated_at,
     _count: { tasks: tag.tasks.length },

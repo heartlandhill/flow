@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { Prisma } from "@prisma/client";
 import type { ActionResult, Area } from "@/types";
+import { requireUserId } from "@/lib/auth";
 
 /**
  * Area with project count for management UI.
@@ -64,6 +65,8 @@ export async function createArea(
   input: CreateAreaInput
 ): Promise<ActionResult<Area>> {
   try {
+    const userId = await requireUserId();
+
     // Validate required inputs
     if (
       !input.name ||
@@ -77,6 +80,7 @@ export async function createArea(
       data: {
         name: input.name.trim(),
         color: input.color?.trim() || "#888888",
+        user_id: userId,
       },
     });
 

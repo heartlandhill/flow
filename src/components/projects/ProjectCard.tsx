@@ -110,6 +110,7 @@ function ActiveCard({
       status: project.status,
       type: project.type,
       sort_order: project.sort_order,
+      user_id: project.user_id,
       review_interval_days: project.review_interval_days,
       last_reviewed_at: project.last_reviewed_at,
       next_review_date: project.next_review_date,

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import type { ActionResult, Tag, TagWithCount } from "@/types";
+import { requireUserId } from "@/lib/auth";
 
 /**
  * Server action to create a new tag.
@@ -13,6 +14,8 @@ export async function createTag(data: {
   icon?: string;
 }): Promise<ActionResult<Tag>> {
   try {
+    const userId = await requireUserId();
+
     // Validate input
     if (!data.name || typeof data.name !== "string" || data.name.trim().length === 0) {
       return { success: false, error: "Tag name is required" };
@@ -22,6 +25,7 @@ export async function createTag(data: {
       data: {
         name: data.name.trim(),
         icon: data.icon || null,
+        user_id: userId,
       },
     });
 
