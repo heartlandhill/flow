@@ -41,7 +41,10 @@ export async function getAreasWithProjectCounts(): Promise<
   ActionResult<AreaWithProjectCount[]>
 > {
   try {
+    const userId = await requireUserId();
+
     const areas = await prisma.area.findMany({
+      where: { user_id: userId },
       include: {
         _count: {
           select: { projects: true },
@@ -111,17 +114,23 @@ export async function updateArea(
   input: UpdateAreaInput
 ): Promise<ActionResult<Area>> {
   try {
+    const userId = await requireUserId();
+
     // Validate area ID
     if (!areaId || typeof areaId !== "string") {
       return { success: false, error: "Area ID is required" };
     }
 
-    // Verify area exists
+    // Verify area exists and user owns it
     const existingArea = await prisma.area.findUnique({
       where: { id: areaId },
     });
 
     if (!existingArea) {
+      return { success: false, error: "Area not found" };
+    }
+
+    if (existingArea.user_id !== userId) {
       return { success: false, error: "Area not found" };
     }
 
@@ -176,12 +185,14 @@ export async function deleteArea(
   reassignToAreaId?: string
 ): Promise<ActionResult> {
   try {
+    const userId = await requireUserId();
+
     // Validate area ID
     if (!areaId || typeof areaId !== "string") {
       return { success: false, error: "Area ID is required" };
     }
 
-    // Verify area exists and get project count
+    // Verify area exists, user owns it, and get project count
     const area = await prisma.area.findUnique({
       where: { id: areaId },
       include: {
@@ -192,6 +203,10 @@ export async function deleteArea(
     });
 
     if (!area) {
+      return { success: false, error: "Area not found" };
+    }
+
+    if (area.user_id !== userId) {
       return { success: false, error: "Area not found" };
     }
 
@@ -214,12 +229,16 @@ export async function deleteArea(
         };
       }
 
-      // Verify destination area exists
+      // Verify destination area exists and user owns it
       const destinationArea = await prisma.area.findUnique({
         where: { id: reassignToAreaId },
       });
 
       if (!destinationArea) {
+        return { success: false, error: "Destination area not found" };
+      }
+
+      if (destinationArea.user_id !== userId) {
         return { success: false, error: "Destination area not found" };
       }
     }
