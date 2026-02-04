@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import { requireUserId } from "@/lib/auth";
 import { ProjectDetailList } from "./ProjectDetailList";
 import { ProjectDetailHeader } from "./ProjectDetailHeader";
 import { AddTaskButton } from "./AddTaskButton";
@@ -18,6 +19,9 @@ export default async function ProjectDetailPage({
   params,
 }: ProjectDetailPageProps) {
   const { id } = await params;
+
+  // Get current user ID (throws if not authenticated)
+  const userId = await requireUserId();
 
   // Query project with area, incomplete tasks, and counts
   // Wrap in try-catch to handle invalid UUID format errors from Prisma
@@ -54,14 +58,15 @@ export default async function ProjectDetailPage({
     notFound();
   }
 
-  // Handle 404 for non-existent project ID
-  if (!project) {
+  // Handle 404 for non-existent project ID or user doesn't own it
+  if (!project || project.user_id !== userId) {
     notFound();
   }
 
   // Query completed task count separately for progress calculation
   const completedCount = await prisma.task.count({
     where: {
+      user_id: userId,
       project_id: id,
       completed: true,
     },
@@ -69,6 +74,7 @@ export default async function ProjectDetailPage({
 
   // Fetch all areas for the edit modal
   const areas = await prisma.area.findMany({
+    where: { user_id: userId },
     orderBy: { sort_order: "asc" },
     select: {
       id: true,
@@ -79,6 +85,7 @@ export default async function ProjectDetailPage({
 
   // Fetch all tags for the new task modal
   const allTags = await prisma.tag.findMany({
+    where: { user_id: userId },
     orderBy: { name: "asc" },
     select: {
       id: true,

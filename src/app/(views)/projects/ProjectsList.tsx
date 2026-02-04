@@ -11,7 +11,7 @@ import { useSearch } from "@/context/SearchContext";
 import { PlusIcon } from "@/components/ui/Icons";
 import type { AreaWithProjectsAndCounts, SomedayProject } from "@/types";
 import type { AreaForModal } from "./page";
-import { EmptyState } from "./page";
+import { EmptyState } from "./EmptyState";
 
 interface ProjectsListProps {
   /** Areas with their active projects */
