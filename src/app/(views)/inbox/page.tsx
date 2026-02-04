@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { requireUserId } from "@/lib/auth";
 import { InboxList } from "./InboxList";
 import type { TaskWithRelations } from "@/types";
 
@@ -7,9 +8,13 @@ import type { TaskWithRelations } from "@/types";
  * This is a server component that fetches data directly via Prisma.
  */
 export default async function InboxPage() {
+  // Get current user ID (throws if not authenticated)
+  const userId = await requireUserId();
+
   // Query inbox tasks with relations needed for display
   const tasks = await prisma.task.findMany({
     where: {
+      user_id: userId,
       inbox: true,
       completed: false,
     },
