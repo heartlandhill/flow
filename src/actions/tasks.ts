@@ -144,9 +144,25 @@ export async function createTaskInProject(
  */
 export async function completeTask(taskId: string): Promise<ActionResult> {
   try {
+    const userId = await requireUserId();
+
     // Validate input
     if (!taskId || typeof taskId !== "string") {
       return { success: false, error: "Task ID is required" };
+    }
+
+    // Verify task exists and belongs to current user
+    const task = await prisma.task.findUnique({
+      where: { id: taskId },
+      select: { id: true, user_id: true },
+    });
+
+    if (!task) {
+      return { success: false, error: "Task not found" };
+    }
+
+    if (task.user_id !== userId) {
+      return { success: false, error: "Not authorized" };
     }
 
     await prisma.task.update({
@@ -212,6 +228,8 @@ export async function updateTask(
   data: import("@/types").UpdateTaskInput
 ): Promise<ActionResult<TaskWithRelations>> {
   try {
+    const userId = await requireUserId();
+
     // Validate task ID
     if (!taskId || typeof taskId !== "string") {
       return { success: false, error: "Task ID is required" };
@@ -231,6 +249,11 @@ export async function updateTask(
 
     if (!currentTask) {
       return { success: false, error: "Task not found" };
+    }
+
+    // Verify task belongs to current user
+    if (currentTask.user_id !== userId) {
+      return { success: false, error: "Not authorized" };
     }
 
     // Build update data object (only include fields that were provided)
@@ -348,9 +371,25 @@ export async function clarifyTask(
   data: import("@/types").ClarifyInput
 ): Promise<ActionResult<Task>> {
   try {
+    const userId = await requireUserId();
+
     // Validate task ID
     if (!taskId || typeof taskId !== "string") {
       return { success: false, error: "Task ID is required" };
+    }
+
+    // Verify task exists and belongs to current user
+    const task = await prisma.task.findUnique({
+      where: { id: taskId },
+      select: { id: true, user_id: true },
+    });
+
+    if (!task) {
+      return { success: false, error: "Task not found" };
+    }
+
+    if (task.user_id !== userId) {
+      return { success: false, error: "Not authorized" };
     }
 
     // Use transaction to update task and tags atomically
@@ -403,6 +442,8 @@ export async function clarifyTask(
  */
 export async function deleteTask(taskId: string): Promise<ActionResult> {
   try {
+    const userId = await requireUserId();
+
     // Validate input
     if (!taskId || typeof taskId !== "string") {
       return { success: false, error: "Task ID is required" };
@@ -415,6 +456,11 @@ export async function deleteTask(taskId: string): Promise<ActionResult> {
 
     if (!existingTask) {
       return { success: false, error: "Task not found" };
+    }
+
+    // Verify task belongs to current user
+    if (existingTask.user_id !== userId) {
+      return { success: false, error: "Not authorized" };
     }
 
     // Delete task - TaskTag and Reminder cascade automatically
@@ -448,12 +494,30 @@ export async function reorderTasks(
   taskIds: string[]
 ): Promise<ActionResult> {
   try {
+    const userId = await requireUserId();
+
     // Validate inputs
     if (!projectId || typeof projectId !== "string") {
       return { success: false, error: "Project ID is required" };
     }
     if (!Array.isArray(taskIds) || taskIds.length === 0) {
       return { success: false, error: "Task IDs array is required" };
+    }
+
+    // Verify all tasks belong to current user
+    const tasks = await prisma.task.findMany({
+      where: { id: { in: taskIds } },
+      select: { id: true, user_id: true },
+    });
+
+    // Check if any task is missing or doesn't belong to user
+    if (tasks.length !== taskIds.length) {
+      return { success: false, error: "One or more tasks not found" };
+    }
+
+    const unauthorizedTask = tasks.find(task => task.user_id !== userId);
+    if (unauthorizedTask) {
+      return { success: false, error: "Not authorized" };
     }
 
     // Update sort_order for each task in transaction
