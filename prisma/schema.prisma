@@ -13,14 +13,18 @@ datasource db {
 
 model Area {
   id         String    @id @default(uuid())
-  name       String    @unique
+  name       String
   color      String    @default("#888888")
   sort_order Int       @default(0)
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
 
+  user_id    String
+  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
   projects   Project[]
 
+  @@unique([user_id, name])
+  @@index([user_id])
   @@map("areas")
 }
 
@@ -57,6 +61,8 @@ model Project {
   next_review_date     DateTime?
 
   // Relations
+  user_id              String
+  user                 User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
   area_id              String
   area                 Area          @relation(fields: [area_id], references: [id], onDelete: Cascade)
   tasks                Task[]
@@ -64,6 +70,7 @@ model Project {
   created_at           DateTime      @default(now())
   updated_at           DateTime      @updatedAt
 
+  @@index([user_id])
   @@index([area_id])
   @@index([status])
   @@index([next_review_date])
@@ -88,6 +95,8 @@ model Task {
   defer_date   DateTime?  @db.Date
 
   // Relations
+  user_id      String
+  user         User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
   project_id   String?
   project      Project?   @relation(fields: [project_id], references: [id], onDelete: SetNull)
   tags         TaskTag[]
@@ -96,11 +105,11 @@ model Task {
   created_at   DateTime   @default(now())
   updated_at   DateTime   @updatedAt
 
-  @@index([inbox, completed])
-  @@index([due_date])
-  @@index([defer_date])
+  @@index([user_id, inbox, completed])
+  @@index([user_id, due_date])
+  @@index([user_id, defer_date])
+  @@index([user_id, completed])
   @@index([project_id])
-  @@index([completed])
   @@map("tasks")
 }
 
@@ -110,14 +119,18 @@ model Task {
 
 model Tag {
   id         String    @id @default(uuid())
-  name       String    @unique
+  name       String
   icon       String?
   sort_order Int       @default(0)
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
 
+  user_id    String
+  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
   tasks      TaskTag[]
 
+  @@unique([user_id, name])
+  @@index([user_id])
   @@map("tags")
 }
 
@@ -153,13 +166,15 @@ model Reminder {
   pgboss_job_id String?
 
   // Relations
+  user_id       String
+  user          User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
   task_id       String
   task          Task           @relation(fields: [task_id], references: [id], onDelete: Cascade)
 
   created_at    DateTime       @default(now())
   updated_at    DateTime       @updatedAt
 
-  @@index([status, trigger_at])
+  @@index([user_id, status, trigger_at])
   @@index([task_id])
   @@map("reminders")
 }
@@ -191,6 +206,10 @@ model NotificationSubscription {
   created_at DateTime         @default(now())
   updated_at DateTime         @updatedAt
 
+  user_id    String
+  user       User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, type, active])
   @@map("notification_subscriptions")
 }
 
@@ -204,6 +223,14 @@ model User {
   password_hash String
   created_at    DateTime @default(now())
 
+  sessions               Session[]
+  areas                  Area[]
+  projects               Project[]
+  tasks                  Task[]
+  tags                   Tag[]
+  reminders              Reminder[]
+  notification_subscriptions NotificationSubscription[]
+
   @@map("users")
 }
 
@@ -212,6 +239,7 @@ model Session {
   token      String   @unique
   expires_at DateTime
   user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
   created_at DateTime @default(now())
 
   @@index([token])
