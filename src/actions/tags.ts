@@ -51,6 +51,8 @@ export async function updateTag(
   }
 ): Promise<ActionResult<Tag>> {
   try {
+    const userId = await requireUserId();
+
     // Validate tag ID
     if (!tagId || typeof tagId !== "string") {
       return { success: false, error: "Tag ID is required" };
@@ -78,7 +80,7 @@ export async function updateTag(
     }
 
     const tag = await prisma.tag.update({
-      where: { id: tagId },
+      where: { id: tagId, user_id: userId },
       data: updateData,
     });
 
@@ -98,13 +100,15 @@ export async function updateTag(
  */
 export async function deleteTag(tagId: string): Promise<ActionResult> {
   try {
+    const userId = await requireUserId();
+
     // Validate tag ID
     if (!tagId || typeof tagId !== "string") {
       return { success: false, error: "Tag ID is required" };
     }
 
     await prisma.tag.delete({
-      where: { id: tagId },
+      where: { id: tagId, user_id: userId },
     });
 
     // Revalidate all views that show tags or tasks with tags
@@ -130,9 +134,25 @@ export async function setTaskTags(
   tagIds: string[]
 ): Promise<ActionResult> {
   try {
+    const userId = await requireUserId();
+
     // Validate input
     if (!taskId || typeof taskId !== "string") {
       return { success: false, error: "Task ID is required" };
+    }
+
+    // Verify all tags belong to the user
+    if (tagIds.length > 0) {
+      const tagCount = await prisma.tag.count({
+        where: {
+          id: { in: tagIds },
+          user_id: userId,
+        },
+      });
+
+      if (tagCount !== tagIds.length) {
+        return { success: false, error: "Invalid tag IDs" };
+      }
     }
 
     // Use transaction to delete existing tags and create new ones
@@ -172,7 +192,10 @@ export async function setTaskTags(
  * Returns tags ordered by sort_order with _count of incomplete tasks.
  */
 export async function getTagsWithTaskCounts(): Promise<TagWithCount[]> {
+  const userId = await requireUserId();
+
   const tags = await prisma.tag.findMany({
+    where: { user_id: userId },
     orderBy: { sort_order: "asc" },
     include: {
       _count: {
