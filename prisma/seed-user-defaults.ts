@@ -25,13 +25,12 @@ const DEFAULT_AREAS = [
 
 // Default tags for common GTD contexts
 const DEFAULT_TAGS = [
-  { name: "errand", icon: "🚗", sort_order: 0 },
-  { name: "computer", icon: "💻", sort_order: 1 },
-  { name: "phone", icon: "📱", sort_order: 2 },
-  { name: "home", icon: "🏠", sort_order: 3 },
-  { name: "office", icon: "🏢", sort_order: 4 },
-  { name: "waiting", icon: "⏳", sort_order: 5 },
-  { name: "someday", icon: "🌟", sort_order: 6 },
+  { name: "Computer", icon: "💻", sort_order: 0 },
+  { name: "Errands", icon: "🏃", sort_order: 1 },
+  { name: "Calls", icon: "📞", sort_order: 2 },
+  { name: "Home", icon: "🏠", sort_order: 3 },
+  { name: "Waiting For", icon: "⏳", sort_order: 4 },
+  { name: "Deep Focus", icon: "🎯", sort_order: 5 },
 ];
 
 async function seedUserDefaults(userId: string, username: string) {
