@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { requireUserId } from "@/lib/auth";
 import { ReviewCard } from "@/components/review/ReviewCard";
 import { markProjectReviewed } from "@/actions/projects";
 import { completeTask, reorderTasks } from "@/actions/tasks";
@@ -14,12 +15,16 @@ import type { ReviewableProject, ReviewProjectStats } from "@/types";
  * 4. Calculates completion stats for each project
  */
 export default async function ReviewPage() {
+  // Get current user ID (throws if not authenticated)
+  const userId = await requireUserId();
+
   // Query reviewable projects:
   // - status must be ACTIVE
   // - must have review_interval_days set (not null)
   // - order by next_review_date ascending (oldest first, null values last)
   const projectsRaw = await prisma.project.findMany({
     where: {
+      user_id: userId,
       status: "ACTIVE",
       review_interval_days: { not: null },
     },
