@@ -7,12 +7,7 @@ const COOKIE_NAME = "flow_session";
 const SESSION_TOKEN_REGEX = /^[a-f0-9]{64}$/;
 
 // Paths that should be accessible without authentication
-const PUBLIC_PATHS = [
-  "/login",
-  "/api/snooze",
-  "/api/notify",
-  "/api/auth/validate",
-];
+const PUBLIC_PATHS = ["/login", "/api/push/subscribe"];
 
 // Prefixes that should always be accessible (static assets, Next.js internals)
 const PUBLIC_PREFIXES = [
@@ -68,9 +63,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // Get session token from cookie
   const sessionToken = request.cookies.get(COOKIE_NAME)?.value;
 
-  // If no session cookie, redirect to login
+  // If no session cookie, redirect to login with return URL
   if (!sessionToken) {
     const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
@@ -78,6 +74,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // This prevents obviously invalid tokens from reaching the app
   if (!isValidTokenFormat(sessionToken)) {
     const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("redirect", pathname);
     const response = NextResponse.redirect(loginUrl);
 
     // Clear the invalid session cookie
@@ -101,7 +98,7 @@ export const config = {
      * - favicon.ico, sw.js (static files at root)
      *
      * Note: We still check PUBLIC_PATHS in the proxy function itself
-     * for additional exclusions like /login and /api/snooze
+     * for additional exclusions like /login and /api/push/subscribe
      */
     "/((?!_next/static|_next/image|favicon.ico|sw.js).*)",
   ],
