@@ -55,13 +55,17 @@ export async function createProject(
       return { success: false, error: "Area ID is required" };
     }
 
-    // Verify area exists
+    // Verify area exists and belongs to current user
     const area = await prisma.area.findUnique({
       where: { id: input.areaId },
     });
 
     if (!area) {
       return { success: false, error: "Area not found" };
+    }
+
+    if (area.user_id !== userId) {
+      return { success: false, error: "Not authorized" };
     }
 
     const project = await prisma.project.create({
@@ -94,12 +98,14 @@ export async function updateProject(
   input: UpdateProjectInput
 ): Promise<ActionResult<Project>> {
   try {
+    const userId = await requireUserId();
+
     // Validate project ID
     if (!projectId || typeof projectId !== "string") {
       return { success: false, error: "Project ID is required" };
     }
 
-    // Verify project exists
+    // Verify project exists and belongs to current user
     const existingProject = await prisma.project.findUnique({
       where: { id: projectId },
     });
@@ -108,7 +114,11 @@ export async function updateProject(
       return { success: false, error: "Project not found" };
     }
 
-    // If updating area, verify it exists
+    if (existingProject.user_id !== userId) {
+      return { success: false, error: "Not authorized" };
+    }
+
+    // If updating area, verify it exists and belongs to current user
     if (input.areaId) {
       const area = await prisma.area.findUnique({
         where: { id: input.areaId },
@@ -116,6 +126,10 @@ export async function updateProject(
 
       if (!area) {
         return { success: false, error: "Area not found" };
+      }
+
+      if (area.user_id !== userId) {
+        return { success: false, error: "Not authorized" };
       }
     }
 
@@ -188,18 +202,24 @@ export async function markProjectReviewed(
   id: string
 ): Promise<ActionResult> {
   try {
+    const userId = await requireUserId();
+
     // Validate project ID
     if (!id || typeof id !== "string") {
       return { success: false, error: "Project ID is required" };
     }
 
-    // Find the project
+    // Find the project and verify ownership
     const project = await prisma.project.findUnique({
       where: { id },
     });
 
     if (!project) {
       return { success: false, error: "Project not found" };
+    }
+
+    if (project.user_id !== userId) {
+      return { success: false, error: "Not authorized" };
     }
 
     if (!project.review_interval_days) {
@@ -239,18 +259,24 @@ export async function markProjectReviewed(
  */
 export async function deleteProject(id: string): Promise<ActionResult> {
   try {
+    const userId = await requireUserId();
+
     // Validate project ID
     if (!id || typeof id !== "string") {
       return { success: false, error: "Project ID is required" };
     }
 
-    // Verify project exists
+    // Verify project exists and belongs to current user
     const project = await prisma.project.findUnique({
       where: { id },
     });
 
     if (!project) {
       return { success: false, error: "Project not found" };
+    }
+
+    if (project.user_id !== userId) {
+      return { success: false, error: "Not authorized" };
     }
 
     // Use transaction to orphan tasks and delete project atomically
