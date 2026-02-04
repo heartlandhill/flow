@@ -6,7 +6,7 @@ export interface BadgeCounts {
   review: number;
 }
 
-export async function getBadgeCounts(): Promise<BadgeCounts> {
+export async function getBadgeCounts(userId: string): Promise<BadgeCounts> {
   // Set today to midnight for consistent date comparisons
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -14,11 +14,12 @@ export async function getBadgeCounts(): Promise<BadgeCounts> {
   const [inbox, todayCount, review] = await Promise.all([
     // Inbox: incomplete inbox tasks
     prisma.task.count({
-      where: { inbox: true, completed: false },
+      where: { user_id: userId, inbox: true, completed: false },
     }),
     // Today: due today OR deferred and available today
     prisma.task.count({
       where: {
+        user_id: userId,
         completed: false,
         OR: [
           { due_date: today },
@@ -29,6 +30,7 @@ export async function getBadgeCounts(): Promise<BadgeCounts> {
     // Review: active projects needing review
     prisma.project.count({
       where: {
+        user_id: userId,
         status: "ACTIVE",
         review_interval_days: { not: null },
         OR: [

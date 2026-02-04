@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { prisma } from "@/lib/db";
 import { getBadgeCounts } from "@/lib/queries/badge-counts";
+import { getCurrentUserId } from "@/lib/auth";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { MobileHeader } from "@/components/layout/MobileHeader";
@@ -16,41 +17,55 @@ export const metadata: Metadata = {
   description: "A calm, focused GTD task manager",
 };
 
+// Force dynamic rendering since we need to read cookies for authentication
+export const dynamic = "force-dynamic";
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Get the current user ID (null if not authenticated)
+  const userId = await getCurrentUserId();
+
   // Fetch areas with their active projects for the task edit dropdown
-  const areasWithProjects = await prisma.area.findMany({
-    orderBy: { sort_order: "asc" },
-    select: {
-      id: true,
-      name: true,
-      color: true,
-      projects: {
-        where: { status: "ACTIVE" },
+  const areasWithProjects = userId
+    ? await prisma.area.findMany({
+        where: { user_id: userId },
         orderBy: { sort_order: "asc" },
         select: {
           id: true,
           name: true,
+          color: true,
+          projects: {
+            where: { status: "ACTIVE" },
+            orderBy: { sort_order: "asc" },
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
-      },
-    },
-  });
+      })
+    : [];
 
   // Fetch all tags for the task edit toggle pills
-  const allTags = await prisma.tag.findMany({
-    orderBy: { sort_order: "asc" },
-    select: {
-      id: true,
-      name: true,
-      icon: true,
-    },
-  });
+  const allTags = userId
+    ? await prisma.tag.findMany({
+        where: { user_id: userId },
+        orderBy: { sort_order: "asc" },
+        select: {
+          id: true,
+          name: true,
+          icon: true,
+        },
+      })
+    : [];
 
   // Fetch badge counts for navigation
-  const badgeCounts = await getBadgeCounts();
+  const badgeCounts = userId
+    ? await getBadgeCounts(userId)
+    : { inbox: 0, today: 0, review: 0 };
 
   return (
     <html lang="en">
