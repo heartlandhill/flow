@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { requireUserId } from "@/lib/auth";
 import { TagsGrid } from "./TagsGrid";
 import type { TagWithTasks, TagWithCount, TaskWithRelations } from "@/types";
 
@@ -10,12 +11,18 @@ import type { TagWithTasks, TagWithCount, TaskWithRelations } from "@/types";
  * This is a server component that fetches data directly via Prisma.
  */
 export default async function TagsPage() {
+  // Get current user ID (throws if not authenticated)
+  const userId = await requireUserId();
+
   // Query all tags with their incomplete tasks and full task relations
   const tags = await prisma.tag.findMany({
+    where: {
+      user_id: userId,
+    },
     orderBy: { sort_order: "asc" },
     include: {
       tasks: {
-        where: { task: { completed: false } },
+        where: { task: { completed: false, user_id: userId } },
         include: {
           task: {
             include: {
