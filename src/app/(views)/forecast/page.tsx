@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { requireUserId } from "@/lib/auth";
 import { getToday, getDateRange } from "@/lib/utils";
 import { filterAvailableTasks } from "@/lib/task-utils";
 import { ForecastStrip } from "@/components/forecast/ForecastStrip";
@@ -22,6 +23,8 @@ function getDateKey(date: Date): string {
  * This is a server component that fetches data directly via Prisma.
  */
 export default async function ForecastPage() {
+  // Get current user ID (throws if not authenticated)
+  const userId = await requireUserId();
   const today = getToday();
 
   // Calculate 14 days from today (inclusive)
@@ -34,6 +37,7 @@ export default async function ForecastPage() {
   // Query tasks with due_date in the next 14 days
   const tasks = await prisma.task.findMany({
     where: {
+      user_id: userId,
       completed: false,
       due_date: {
         gte: today,
