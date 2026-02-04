@@ -97,6 +97,8 @@ export async function snoozeReminder(
   minutes: number
 ): Promise<ActionResult<Reminder>> {
   try {
+    const userId = await requireUserId();
+
     // Validate reminder ID
     if (!reminderId || typeof reminderId !== "string") {
       return { success: false, error: "Reminder ID is required" };
@@ -114,6 +116,11 @@ export async function snoozeReminder(
 
     if (!reminder) {
       return { success: false, error: "Reminder not found" };
+    }
+
+    // Verify reminder belongs to current user
+    if (reminder.user_id !== userId) {
+      return { success: false, error: "Not authorized" };
     }
 
     // Don't snooze dismissed reminders
@@ -168,6 +175,8 @@ export async function dismissReminder(
   reminderId: string
 ): Promise<ActionResult<Reminder>> {
   try {
+    const userId = await requireUserId();
+
     // Validate reminder ID
     if (!reminderId || typeof reminderId !== "string") {
       return { success: false, error: "Reminder ID is required" };
@@ -180,6 +189,11 @@ export async function dismissReminder(
 
     if (!reminder) {
       return { success: false, error: "Reminder not found" };
+    }
+
+    // Verify reminder belongs to current user
+    if (reminder.user_id !== userId) {
+      return { success: false, error: "Not authorized" };
     }
 
     // Already dismissed - return success idempotently
@@ -223,6 +237,8 @@ export async function deleteReminder(
   reminderId: string
 ): Promise<ActionResult> {
   try {
+    const userId = await requireUserId();
+
     // Validate reminder ID
     if (!reminderId || typeof reminderId !== "string") {
       return { success: false, error: "Reminder ID is required" };
@@ -235,6 +251,11 @@ export async function deleteReminder(
 
     if (!reminder) {
       return { success: false, error: "Reminder not found" };
+    }
+
+    // Verify reminder belongs to current user
+    if (reminder.user_id !== userId) {
+      return { success: false, error: "Not authorized" };
     }
 
     // Cancel the pg-boss job if it exists
