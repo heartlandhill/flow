@@ -118,9 +118,10 @@ export async function handleReminderJob(
     const { reminder_id, task_id } = job.data;
 
     try {
-      // Load the reminder
+      // Load the reminder with user_id for subscription filtering
       const reminder = await prisma.reminder.findUnique({
         where: { id: reminder_id },
+        select: { id: true, status: true, user_id: true },
       });
 
       // Skip if reminder doesn't exist or already dismissed
@@ -145,8 +146,19 @@ export async function handleReminderJob(
         continue;
       }
 
+      // Load active notification subscriptions for this user
+      const subscriptions = await prisma.notificationSubscription.findMany({
+        where: {
+          user_id: reminder.user_id,
+          active: true,
+        },
+      });
+
       // Log the reminder (placeholder for actual notification delivery in Specs 015-016)
-      console.log(`[Reminder] Firing for task: ${task.title}`);
+      console.log(`[Reminder] Firing for task: ${task.title} (${subscriptions.length} subscriptions)`);
+      // TODO: In Specs 015-016, send notifications to each subscription:
+      // - For NTFY: POST to ntfy_topic
+      // - For WEBPUSH: Use web-push library with endpoint/p256dh/auth
 
       // Update reminder status to SENT
       await prisma.reminder.update({
