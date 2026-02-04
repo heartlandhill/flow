@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { requireUserId } from "@/lib/auth";
 import { ProjectsList } from "./ProjectsList";
 import type {
   AreaWithProjectsAndCounts,
@@ -33,8 +34,12 @@ export interface EmptyStateProps {
  * 4. All areas (for the NewProjectModal)
  */
 export default async function ProjectsPage() {
+  // Get current user ID (throws if not authenticated)
+  const userId = await requireUserId();
+
   // Query 1: Areas with active projects and incomplete tasks
   const areasRaw = await prisma.area.findMany({
+    where: { user_id: userId },
     orderBy: { sort_order: "asc" },
     include: {
       projects: {
@@ -63,7 +68,10 @@ export default async function ProjectsPage() {
 
   // Query 2: Completed task counts per project (for progress calculation)
   const completedCountsRaw = await prisma.project.findMany({
-    where: { status: "ACTIVE" },
+    where: {
+      user_id: userId,
+      status: "ACTIVE",
+    },
     select: {
       id: true,
       _count: {
@@ -78,7 +86,10 @@ export default async function ProjectsPage() {
 
   // Query 3: Someday projects
   const somedayProjectsRaw = await prisma.project.findMany({
-    where: { status: "SOMEDAY" },
+    where: {
+      user_id: userId,
+      status: "SOMEDAY",
+    },
     orderBy: { sort_order: "asc" },
     include: {
       area: true,
@@ -87,6 +98,7 @@ export default async function ProjectsPage() {
 
   // Query 4: All areas for the NewProjectModal dropdown
   const allAreasRaw = await prisma.area.findMany({
+    where: { user_id: userId },
     orderBy: { sort_order: "asc" },
     select: {
       id: true,
