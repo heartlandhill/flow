@@ -55,15 +55,34 @@ async function handleSnoozeRequest(
       );
     }
 
-    // Check reminder exists
+    // Check reminder exists and fetch with user relation for ownership verification
     const reminder = await prisma.reminder.findUnique({
       where: { id: reminderId },
+      include: {
+        user: true,
+      },
     });
 
     if (!reminder) {
       return NextResponse.json(
         { success: false, error: "Reminder not found" },
         { status: 404 }
+      );
+    }
+
+    // Verify ownership: reminder must have a valid user
+    if (!reminder.user_id) {
+      return NextResponse.json(
+        { success: false, error: "Reminder has no owner" },
+        { status: 403 }
+      );
+    }
+
+    // Verify the user still exists
+    if (!reminder.user) {
+      return NextResponse.json(
+        { success: false, error: "Reminder owner not found" },
+        { status: 403 }
       );
     }
 
