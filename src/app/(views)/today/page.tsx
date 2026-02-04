@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { requireUserId } from "@/lib/auth";
 import { getToday, formatDate } from "@/lib/utils";
 import { filterAvailableTasks } from "@/lib/task-utils";
 import { TodayList } from "./TodayList";
@@ -13,11 +14,14 @@ import type { TaskWithRelations } from "@/types";
  * This is a server component that fetches data directly via Prisma.
  */
 export default async function TodayPage() {
+  // Get current user ID (throws if not authenticated)
+  const userId = await requireUserId();
   const today = getToday();
 
   // Query today's tasks with relations needed for display
   const tasks = await prisma.task.findMany({
     where: {
+      user_id: userId,
       completed: false,
       OR: [
         { due_date: today },
